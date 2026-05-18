@@ -38,7 +38,10 @@ export async function createSession(params: {
   return session;
 }
 
-export async function updateSession(whatsappNumber: string, patch: Partial<Session>): Promise<Session> {
+export async function updateSession(
+  whatsappNumber: string,
+  patch: Partial<Session>,
+): Promise<Session> {
   const existing = await store.get(whatsappNumber);
   if (!existing) throw new Error(`No session for ${whatsappNumber}`);
   const updated: Session = { ...existing, ...patch, lastActivityAt: new Date() };

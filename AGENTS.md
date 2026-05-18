@@ -123,12 +123,12 @@ For detailed architectural context (data model, flow lifecycle, where to add wha
 
 See `.env.example` for the full list. Key vars:
 
-| Var                                                   | Used by                                                       |
-| ----------------------------------------------------- | ------------------------------------------------------------- |
-| `WHATSAPP_APP_SECRET`                                 | HMAC signature verification                                   |
-| `WHATSAPP_PHONE_NUMBER_ID`                            | Default sender (overridden per-tenant in production)          |
-| `WHATSAPP_ACCESS_TOKEN`                               | Default sender (overridden per-tenant in production)          |
-| `GEMINI_API_KEY`                                      | AI client                                                     |
-| `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`          | DB client                                                     |
+| Var                                                   | Used by                                                                                                                               |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `WHATSAPP_APP_SECRET`                                 | HMAC signature verification                                                                                                           |
+| `WHATSAPP_PHONE_NUMBER_ID`                            | Default sender (overridden per-tenant in production)                                                                                  |
+| `WHATSAPP_ACCESS_TOKEN`                               | Default sender (overridden per-tenant in production)                                                                                  |
+| `GEMINI_API_KEY`                                      | AI client                                                                                                                             |
+| `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`          | DB client                                                                                                                             |
 | `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` | Redis session store. Automatically activates `RedisSessionStore` when both are present, otherwise defaults to `InMemorySessionStore`. |
-| `DEFAULT_TENANT_ID`                                   | Fallback tenant for local dev when no `phone_number_id` match |
+| `DEFAULT_TENANT_ID`                                   | Fallback tenant for local dev when no `phone_number_id` match                                                                         |

@@ -270,7 +270,10 @@ async function beginStep(
       'You have completed every step in this journey. Type MENU to start another.',
       creds,
     );
-    await updateSession(whatsappNumber, { currentMode: 'journey_complete', currentSessionId: null });
+    await updateSession(whatsappNumber, {
+      currentMode: 'journey_complete',
+      currentSessionId: null,
+    });
     return;
   }
 
