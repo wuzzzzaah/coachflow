@@ -68,9 +68,9 @@ export async function handleInbound(
   }
 
   const { user, created } = await upsertUser(msg.whatsappNumber, msg.displayName);
-  let session = getSession(msg.whatsappNumber);
+  let session = await getSession(msg.whatsappNumber);
   if (!session) {
-    session = createSession({
+    session = await createSession({
       tenantId,
       userId: user.id,
       whatsappNumber: msg.whatsappNumber,
@@ -103,7 +103,7 @@ export async function handleInbound(
   if (session.currentMode === 'onboarding') {
     await markOnboarded(user.id).catch(() => undefined);
     await sendWelcome(session, tenantId, senderCreds);
-    updateSession(session.whatsappNumber, { currentMode: 'menu' });
+    await updateSession(session.whatsappNumber, { currentMode: 'menu' });
     return;
   }
 
@@ -139,7 +139,7 @@ async function handleKeyword(
     if (session.currentSessionId) {
       await dbEndSession(session.currentSessionId, 'reset by user').catch(() => undefined);
     }
-    resetSession(session.whatsappNumber);
+    await resetSession(session.whatsappNumber);
     await sendWelcome(session, tenantId, creds);
     return true;
   }
@@ -166,7 +166,7 @@ async function handleKeyword(
     if (session.currentSessionId) {
       await dbEndSession(session.currentSessionId, 'paused by user').catch(() => undefined);
     }
-    updateSession(session.whatsappNumber, { currentMode: 'paused', currentSessionId: null });
+    await updateSession(session.whatsappNumber, { currentMode: 'paused', currentSessionId: null });
     await sendTextMessage(
       session.whatsappNumber,
       "Session paused. Type MENU when you're ready to continue.",
@@ -186,7 +186,7 @@ async function handleKeyword(
   }
   if (KEYWORDS.menu.test(text) && session.currentMode === 'paused') {
     await sendWelcome(session, tenantId, creds);
-    updateSession(session.whatsappNumber, { currentMode: 'menu' });
+    await updateSession(session.whatsappNumber, { currentMode: 'menu' });
     return true;
   }
   return false;
@@ -240,7 +240,7 @@ async function startJourney(
   const stepIndex = uj.status === 'completed' ? 0 : uj.currentStepIndex;
   await updateUserProgress(session.userId, journeyId, stepIndex).catch(() => undefined);
 
-  updateSession(session.whatsappNumber, {
+  await updateSession(session.whatsappNumber, {
     currentJourneyId: journeyId,
     currentStepIndex: stepIndex,
     currentMode: 'journey_intro',
@@ -261,7 +261,7 @@ async function beginStep(
   tenantId: string,
   creds?: SenderCredentials,
 ): Promise<void> {
-  const session = getSession(whatsappNumber);
+  const session = await getSession(whatsappNumber);
   if (!session || !session.currentJourneyId) return;
   const step = await getStep(tenantId, session.currentJourneyId, session.currentStepIndex);
   if (!step) {
@@ -270,7 +270,7 @@ async function beginStep(
       'You have completed every step in this journey. Type MENU to start another.',
       creds,
     );
-    updateSession(whatsappNumber, { currentMode: 'journey_complete', currentSessionId: null });
+    await updateSession(whatsappNumber, { currentMode: 'journey_complete', currentSessionId: null });
     return;
   }
 
@@ -280,7 +280,7 @@ async function beginStep(
     stepId: step.id,
     mode: step.mode,
   });
-  const updated = updateSession(whatsappNumber, {
+  const updated = await updateSession(whatsappNumber, {
     currentMode: step.mode,
     currentSessionId: dbSessionId,
     conversationHistory: [],
@@ -289,7 +289,7 @@ async function beginStep(
   });
 
   await sendTextMessage(whatsappNumber, step.openingMessage, creds);
-  appendTurn(whatsappNumber, { role: 'assistant', content: step.openingMessage });
+  await appendTurn(whatsappNumber, { role: 'assistant', content: step.openingMessage });
   await logMessage({
     sessionId: dbSessionId,
     userId: updated.userId,
@@ -311,7 +311,7 @@ async function runStepTurn(
   tenantId: string,
   creds?: SenderCredentials,
 ): Promise<void> {
-  const session = getSession(sessionIn.whatsappNumber) ?? sessionIn;
+  const session = (await getSession(sessionIn.whatsappNumber)) ?? sessionIn;
   if (!session.currentJourneyId || !session.currentSessionId) {
     await sendWelcome(session, tenantId, creds);
     return;
@@ -319,7 +319,7 @@ async function runStepTurn(
   const step = await getStep(tenantId, session.currentJourneyId, session.currentStepIndex);
   if (!step) return;
 
-  appendTurn(session.whatsappNumber, { role: 'user', content: userText });
+  await appendTurn(session.whatsappNumber, { role: 'user', content: userText });
   await logMessage({
     sessionId: session.currentSessionId,
     userId: session.userId,
@@ -328,7 +328,7 @@ async function runStepTurn(
     content: userText,
   }).catch((err) => console.error(`[flowRouter] logMessage failed: ${(err as Error).message}`));
 
-  const live = getSession(session.whatsappNumber) ?? session;
+  const live = (await getSession(session.whatsappNumber)) ?? session;
   const promptOverrides = await getTenantPromptOverrides(tenantId).catch(() => ({}));
 
   let aiResponse: AIResponse;
@@ -355,7 +355,7 @@ async function runStepTurn(
   const advancing = aiResponse.shouldAdvance && meetsTurnGate;
 
   await sendTextMessage(session.whatsappNumber, aiResponse.message, creds);
-  appendTurn(session.whatsappNumber, { role: 'assistant', content: aiResponse.message });
+  await appendTurn(session.whatsappNumber, { role: 'assistant', content: aiResponse.message });
   await logMessage({
     sessionId: session.currentSessionId,
     userId: session.userId,
@@ -427,7 +427,7 @@ async function advanceStep(
     await updateUserProgress(session.userId, session.currentJourneyId, nextIndex).catch(
       () => undefined,
     );
-    updateSession(session.whatsappNumber, {
+    await updateSession(session.whatsappNumber, {
       currentMode: 'journey_complete',
       currentSessionId: null,
       currentStepIndex: nextIndex,
@@ -444,7 +444,7 @@ async function advanceStep(
   await updateUserProgress(session.userId, session.currentJourneyId, nextIndex).catch(
     () => undefined,
   );
-  updateSession(session.whatsappNumber, {
+  await updateSession(session.whatsappNumber, {
     currentStepIndex: nextIndex,
     currentMode: 'step_complete',
     currentSessionId: null,

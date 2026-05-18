@@ -88,7 +88,7 @@ These files define the engine contract. Changes here break other adapters:
 - **Zod for all external inputs** — every external boundary (webhook body, API request body, AI response) must be validated with a Zod schema from `@coachflow/shared`.
 - **No raw SQL outside `apps/api/src/db/`** — use the Supabase JS client in the `db/` layer only.
 - **No secrets in source** — `.env` is gitignored; tokens live in Supabase Vault.
-- **Async at the edges, sync in the engine** — `flowRouter.ts` calls DB and AI asynchronously, but session state is accessed synchronously via `InMemorySessionStore.getSync/setSync`. Don't add `await` to session reads inside the engine loop.
+- **Async everywhere** — `flowRouter.ts` calls DB, AI, and session store (`RedisSessionStore` or `InMemorySessionStore`) asynchronously. Ensure all session reads/writes use `await`.
 - **One migration per change** — add `supabase/migrations/NNN_description.sql`, never edit an existing one.
 
 ---
@@ -130,5 +130,5 @@ See `.env.example` for the full list. Key vars:
 | `WHATSAPP_ACCESS_TOKEN`                               | Default sender (overridden per-tenant in production)          |
 | `GEMINI_API_KEY`                                      | AI client                                                     |
 | `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`          | DB client                                                     |
-| `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` | Redis session store                                           |
+| `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` | Redis session store. Automatically activates `RedisSessionStore` when both are present, otherwise defaults to `InMemorySessionStore`. |
 | `DEFAULT_TENANT_ID`                                   | Fallback tenant for local dev when no `phone_number_id` match |
