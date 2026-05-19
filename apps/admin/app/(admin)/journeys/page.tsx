@@ -1,10 +1,23 @@
-export default function JourneysPage() {
+import React from 'react';
+import { apiFetch } from '../../../lib/api';
+import { JourneyRow } from '@coachflow/shared';
+import JourneysClientPage from './_components/JourneysClientPage';
+
+// We must provide an async parameter object for Page components in Next.js 15+
+export default async function JourneysPage({ searchParams }: { searchParams: Promise<{ tenantId?: string }> }) {
+  const params = await searchParams;
+  const tenantId = params.tenantId || process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID || 'c07ab0a1-43ef-4b47-b353-06dc72c21dc5';
+
+  const res = await apiFetch(`/api/journeys?tenantId=${tenantId}`);
+  let journeys: JourneyRow[] = [];
+
+  if (res.ok) {
+    journeys = await res.json();
+  } else {
+    console.error('Failed to fetch journeys');
+  }
+
   return (
-    <div className="p-8">
-      <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50 mb-6">Journeys</h1>
-      <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-8 text-center text-zinc-500 dark:text-zinc-400">
-        Journeys coming soon...
-      </div>
-    </div>
-  )
+    <JourneysClientPage initialJourneys={journeys} tenantId={tenantId} />
+  );
 }
