@@ -48,6 +48,8 @@ See [`docs/production-migration.md`](docs/production-migration.md) for the swap 
 - A **Supabase** project (free tier is fine)
 - **ngrok** (or any HTTPS tunnel) for local webhook testing
 
+*For production deployments, refer to the [Deployment Guide](docs/deployment.md).*
+
 ---
 
 ## 3. Meta WhatsApp Cloud API Setup
