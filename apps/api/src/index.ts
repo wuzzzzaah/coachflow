@@ -7,6 +7,7 @@ import {
   configureSessionStore,
 } from './engine/sessionManager';
 import { InMemorySessionStore } from './engine/inMemorySessionStore';
+import { RedisSessionStore } from './engine/redisSessionStore';
 import { listJourneys } from './db/journeyLoader';
 import { getUserByNumber } from './db/users';
 import { getScoresForUser } from './db/scores';
@@ -14,9 +15,20 @@ import { getSessionMessages } from './db/sessions';
 import { requireAuth } from './middleware/auth';
 
 // Session store — InMemorySessionStore is the default. Swap to RedisSessionStore in
-// production by setting UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN (see T8.1).
+// production by setting UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN.
 // When Redis env vars are present the store is replaced; the engine API is unchanged.
-configureSessionStore(new InMemorySessionStore());
+const store =
+  process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
+    ? new RedisSessionStore()
+    : new InMemorySessionStore();
+
+if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+  console.log('[session] using RedisSessionStore');
+} else {
+  console.log('[session] using InMemorySessionStore');
+}
+
+configureSessionStore(store);
 
 const app = express();
 
@@ -35,11 +47,11 @@ app.get('/webhook/whatsapp', verifyWebhook);
 app.post('/webhook/whatsapp', verifySignature, receiveWebhook);
 
 // Health
-app.get('/health', (_req: Request, res: Response) => {
+app.get('/health', async (_req: Request, res: Response) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    activeSessions: activeSessionCount(),
+    activeSessions: await activeSessionCount(),
   });
 });
 

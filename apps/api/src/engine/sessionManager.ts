@@ -1,23 +1,24 @@
 import { Session, FlowState, ConversationTurn } from '@coachflow/shared';
 import { InMemorySessionStore } from './inMemorySessionStore';
+import { ISessionStore } from './sessionStore';
 
 // Default to in-memory store; replaced at startup by configureSessionStore().
-let store = new InMemorySessionStore();
+let store: ISessionStore = new InMemorySessionStore();
 
-export function configureSessionStore(s: InMemorySessionStore): void {
+export function configureSessionStore(s: ISessionStore): void {
   store = s;
 }
 
-export function getSession(whatsappNumber: string): Session | undefined {
-  return store.getSync(whatsappNumber);
+export async function getSession(whatsappNumber: string): Promise<Session | undefined> {
+  return (await store.get(whatsappNumber)) ?? undefined;
 }
 
-export function createSession(params: {
+export async function createSession(params: {
   tenantId: string;
   userId: string;
   whatsappNumber: string;
   initialMode?: FlowState;
-}): Session {
+}): Promise<Session> {
   const now = new Date();
   const session: Session = {
     tenantId: params.tenantId,
@@ -33,30 +34,33 @@ export function createSession(params: {
     turnCount: 0,
     metadata: {},
   };
-  store.setSync(session);
+  await store.set(session);
   return session;
 }
 
-export function updateSession(whatsappNumber: string, patch: Partial<Session>): Session {
-  const existing = store.getSync(whatsappNumber);
+export async function updateSession(
+  whatsappNumber: string,
+  patch: Partial<Session>,
+): Promise<Session> {
+  const existing = await store.get(whatsappNumber);
   if (!existing) throw new Error(`No session for ${whatsappNumber}`);
   const updated: Session = { ...existing, ...patch, lastActivityAt: new Date() };
-  store.setSync(updated);
+  await store.set(updated);
   return updated;
 }
 
-export function appendTurn(whatsappNumber: string, turn: ConversationTurn): Session {
-  const existing = store.getSync(whatsappNumber);
+export async function appendTurn(whatsappNumber: string, turn: ConversationTurn): Promise<Session> {
+  const existing = await store.get(whatsappNumber);
   if (!existing) throw new Error(`No session for ${whatsappNumber}`);
   existing.conversationHistory.push(turn);
   existing.turnCount += turn.role === 'user' ? 1 : 0;
   existing.lastActivityAt = new Date();
-  store.setSync(existing);
+  await store.set(existing);
   return existing;
 }
 
-export function resetSession(whatsappNumber: string): Session | undefined {
-  const existing = store.getSync(whatsappNumber);
+export async function resetSession(whatsappNumber: string): Promise<Session | undefined> {
+  const existing = await store.get(whatsappNumber);
   if (!existing) return undefined;
   const now = new Date();
   const reset: Session = {
@@ -71,16 +75,16 @@ export function resetSession(whatsappNumber: string): Session | undefined {
     turnCount: 0,
     metadata: {},
   };
-  store.setSync(reset);
+  await store.set(reset);
   return reset;
 }
 
-export function deleteSession(whatsappNumber: string): void {
-  store.deleteSync(whatsappNumber);
+export async function deleteSession(whatsappNumber: string): Promise<void> {
+  await store.delete(whatsappNumber);
 }
 
-export function activeSessionCount(): number {
-  return store.sizeSync?.() ?? 0;
+export async function activeSessionCount(): Promise<number> {
+  return store.size();
 }
 
 export type ExpiryHandler = (session: Session) => Promise<void> | void;
@@ -89,6 +93,8 @@ let sweeperHandle: NodeJS.Timeout | null = null;
 
 export function startSessionSweeper(onExpire: ExpiryHandler): void {
   if (sweeperHandle) return;
+  if (!(store instanceof InMemorySessionStore)) return; // Redis handles TTL natively
+
   const SESSION_TTL_MS = 30 * 60 * 1000;
   const SWEEP_INTERVAL_MS = 5 * 60 * 1000;
   sweeperHandle = setInterval(async () => {
