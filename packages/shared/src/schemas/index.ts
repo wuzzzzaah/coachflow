@@ -43,6 +43,7 @@ export const journeyStepSchema = z.object({
   min_turns: z.number().int().min(0),
   step_guidance: z.string(),
   scoring_criteria: z.array(z.string()).nullable(),
+  deleted_at: z.string().nullable().optional(),
 });
 
 export const journeySchema = z.object({
@@ -53,6 +54,44 @@ export const journeySchema = z.object({
   estimated_minutes: z.number().int().min(0),
   version: z.number().int().min(1),
   created_at: z.string(),
+  deleted_at: z.string().nullable().optional(),
+});
+
+export const createJourneySchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  description: z.string().optional(),
+  estimated_minutes: z.number().int().min(0).optional(),
+});
+
+export const updateJourneySchema = z.object({
+  title: z.string().optional(),
+  description: z.string().optional(),
+  estimated_minutes: z.number().int().min(0).optional(),
+});
+
+export const createJourneyStepSchema = z.object({
+  id: z.string(),
+  step_index: z.number().int().min(0),
+  mode: z.enum(['coaching', 'roleplay', 'reflection', 'assessment']),
+  title: z.string(),
+  opening_message: z.string(),
+  min_turns: z.number().int().min(0).optional(),
+  step_guidance: z.string().optional(),
+  scoring_criteria: z.array(z.string()).nullable().optional(),
+});
+
+export const updateJourneyStepSchema = z.object({
+  mode: z.enum(['coaching', 'roleplay', 'reflection', 'assessment']).optional(),
+  title: z.string().optional(),
+  opening_message: z.string().optional(),
+  min_turns: z.number().int().min(0).optional(),
+  step_guidance: z.string().optional(),
+  scoring_criteria: z.array(z.string()).nullable().optional(),
+});
+
+export const reorderStepsSchema = z.object({
+  order: z.array(z.string()),
 });
 
 export const tenantSchema = z.object({
