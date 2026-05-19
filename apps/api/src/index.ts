@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import express, { Request, Response } from 'express';
+import cors from 'cors';
 import { verifyWebhook, receiveWebhook, verifySignature } from './whatsapp/webhook';
 import {
   activeSessionCount,
@@ -39,6 +40,19 @@ if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) 
 configureSessionStore(store);
 
 const app = express();
+
+// Allow CORS from the Vercel Admin UI
+const frontendUrl = process.env.FRONTEND_URL;
+if (frontendUrl) {
+  app.use(
+    cors({
+      origin: frontendUrl,
+    }),
+  );
+} else {
+  // Allow all if FRONTEND_URL is not set (e.g. local dev fallback)
+  app.use(cors());
+}
 
 // Capture raw body for X-Hub-Signature-256 HMAC verification on the webhook POST.
 app.use(
