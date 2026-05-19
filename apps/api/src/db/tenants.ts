@@ -34,3 +34,40 @@ export async function getTenantPromptOverrides(tenantId: string): Promise<Record
   }
   return result;
 }
+
+export async function listTenants(): Promise<Tenant[]> {
+  const db = supabase();
+  const { data, error } = await db.from('tenants').select('*').order('created_at', { ascending: false });
+  if (error) throw new Error(`List tenants failed: ${error.message}`);
+  return data as Tenant[];
+}
+
+export async function createTenant(payload: { name: string; phone_number_id?: string; webhook_verify_token?: string }): Promise<Tenant> {
+  const db = supabase();
+  const { data, error } = await db.from('tenants').insert(payload).select().single();
+  if (error) throw new Error(`Create tenant failed: ${error.message}`);
+  return data as Tenant;
+}
+
+export async function getTenantById(tenantId: string): Promise<Tenant | null> {
+  const db = supabase();
+  const { data, error } = await db.from('tenants').select('*').eq('id', tenantId).maybeSingle();
+  if (error) throw new Error(`Get tenant failed: ${error.message}`);
+  return data as Tenant | null;
+}
+
+export async function updateTenant(tenantId: string, payload: { name?: string; phone_number_id?: string; webhook_verify_token?: string }): Promise<Tenant> {
+  const db = supabase();
+  const { data, error } = await db.from('tenants').update(payload).eq('id', tenantId).select().single();
+  if (error) throw new Error(`Update tenant failed: ${error.message}`);
+  return data as Tenant;
+}
+
+export async function setTenantWhatsAppToken(tenantId: string, token: string): Promise<void> {
+  const db = supabase();
+  const { error } = await db.rpc('set_tenant_whatsapp_token', {
+    p_tenant_id: tenantId,
+    p_token: token,
+  });
+  if (error) throw new Error(`Set tenant WhatsApp token failed: ${error.message}`);
+}

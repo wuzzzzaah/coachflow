@@ -14,13 +14,16 @@ import { createStep, updateStep, deleteStep, reorderSteps } from './db/journeySt
 import { getUserByNumber } from './db/users';
 import { getScoresForUser } from './db/scores';
 import { getSessionMessages } from './db/sessions';
+import { listTenants, createTenant, getTenantById, updateTenant, setTenantWhatsAppToken } from './db/tenants';
 import { requireAuth, requireRole } from './middleware/auth';
 import {
   createJourneySchema,
   updateJourneySchema,
   createJourneyStepSchema,
   updateJourneyStepSchema,
-  reorderStepsSchema
+  reorderStepsSchema,
+  createTenantSchema,
+  updateTenantSchema,
 } from '@coachflow/shared';
 
 // Session store — InMemorySessionStore is the default. Swap to RedisSessionStore in
@@ -79,6 +82,63 @@ app.get('/health', async (_req: Request, res: Response) => {
 
 // Internal API — all routes below require a valid Supabase Auth JWT.
 app.use('/api', requireAuth);
+
+// Tenant management APIs
+app.get('/api/tenants', requireRole('super_admin'), async (req, res) => {
+  try {
+    const tenants = await listTenants();
+    return res.json(tenants);
+  } catch (err) {
+    return res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+app.post('/api/tenants', requireRole('super_admin'), async (req, res) => {
+  try {
+    const parsed = createTenantSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'invalid input', details: parsed.error });
+    }
+    const tenant = await createTenant(parsed.data);
+    return res.status(201).json(tenant);
+  } catch (err) {
+    return res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+app.get('/api/tenants/:id', requireRole('super_admin'), async (req, res) => {
+  try {
+    const tenant = await getTenantById(req.params.id);
+    if (!tenant) return res.status(404).json({ error: 'not_found' });
+    return res.json(tenant);
+  } catch (err) {
+    return res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+app.patch('/api/tenants/:id', requireRole('super_admin'), async (req, res) => {
+  try {
+    const parsed = updateTenantSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'invalid input', details: parsed.error });
+    }
+    const tenant = await updateTenant(req.params.id, parsed.data);
+    return res.json(tenant);
+  } catch (err) {
+    return res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+app.put('/api/tenants/:id/whatsapp-token', requireRole('super_admin'), async (req, res) => {
+  try {
+    const { token } = req.body;
+    if (!token) return res.status(400).json({ error: 'token required' });
+    await setTenantWhatsAppToken(req.params.id, token);
+    return res.status(204).send();
+  } catch (err) {
+    return res.status(500).json({ error: (err as Error).message });
+  }
+});
 
 app.get('/api/journeys', async (req, res) => {
   try {
