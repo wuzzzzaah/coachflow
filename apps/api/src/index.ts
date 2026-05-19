@@ -15,6 +15,7 @@ import { getUserByNumber } from './db/users';
 import { getScoresForUser } from './db/scores';
 import { getSessionMessages } from './db/sessions';
 import { listTenants, createTenant, getTenantById, updateTenant, setTenantWhatsAppToken, getTenantPromptOverrides, upsertTenantPrompt, deleteTenantPrompt } from './db/tenants';
+import { getCompletionRates, getStepFunnel, getScoreDistribution } from './db/analytics';
 import { requireAuth, requireRole } from './middleware/auth';
 import {
   createJourneySchema,
@@ -294,6 +295,41 @@ app.get('/api/sessions/:id', async (req, res) => {
   try {
     const msgs = await getSessionMessages(req.params.id);
     return res.json(msgs);
+  } catch (err) {
+    return res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+app.get('/api/analytics/completion', requireRole('admin', 'super_admin'), async (req, res) => {
+  try {
+    const tenantId = (req.query.tenantId as string) ?? process.env.DEFAULT_TENANT_ID ?? '';
+    if (!tenantId) return res.status(400).json({ error: 'tenantId query param required' });
+    const stats = await getCompletionRates(tenantId);
+    return res.json(stats);
+  } catch (err) {
+    return res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+app.get('/api/analytics/funnel', requireRole('admin', 'super_admin'), async (req, res) => {
+  try {
+    const tenantId = (req.query.tenantId as string) ?? process.env.DEFAULT_TENANT_ID ?? '';
+    const journeyId = req.query.journeyId as string;
+    if (!tenantId) return res.status(400).json({ error: 'tenantId query param required' });
+    if (!journeyId) return res.status(400).json({ error: 'journeyId query param required' });
+    const funnel = await getStepFunnel(tenantId, journeyId);
+    return res.json(funnel);
+  } catch (err) {
+    return res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+app.get('/api/analytics/scores', requireRole('admin', 'super_admin'), async (req, res) => {
+  try {
+    const tenantId = (req.query.tenantId as string) ?? process.env.DEFAULT_TENANT_ID ?? '';
+    if (!tenantId) return res.status(400).json({ error: 'tenantId query param required' });
+    const scores = await getScoreDistribution(tenantId);
+    return res.json(scores);
   } catch (err) {
     return res.status(500).json({ error: (err as Error).message });
   }
