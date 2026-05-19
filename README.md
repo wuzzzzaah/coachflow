@@ -70,6 +70,11 @@ Step-by-step (also see [`docs/whatsapp-setup.md`](docs/whatsapp-setup.md)):
 
 ## 4. Local Setup
 
+> **Note:** The `docker compose up -d` services are scaffolding for future integration tests.
+> The current application stack requires a hosted Supabase project (`SUPABASE_URL` / `SUPABASE_ANON_KEY`)
+> and an Upstash Redis account (`UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`) —
+> the local containers are not protocol-compatible with those clients.
+
 ```bash
 git clone <repo>
 cd ai-coach
@@ -78,9 +83,13 @@ cp .env.example .env
 
 npm install
 
+# Start local infrastructure (Postgres and Redis)
+docker compose up -d
+
 # Apply database schema — either:
 #   - paste supabase/schema.sql into the Supabase SQL editor and run it, OR
-#   - if using the Supabase CLI: `supabase db push`
+#   - if using the Supabase CLI: `supabase db push`, OR
+#   - run `supabase/migrations/*.sql` in order against the local Postgres to initialise the schema.
 
 npm run dev
 
