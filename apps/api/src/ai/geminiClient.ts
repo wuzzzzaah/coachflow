@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
 import { systemPrompt } from './prompts/system';
 import { coachingModeGuidance } from './prompts/coaching';
 import { roleplayModeGuidance } from './prompts/roleplay';
@@ -35,12 +35,7 @@ export async function generate(input: GenerateInput): Promise<string> {
 
   const key = process.env.GEMINI_API_KEY;
   if (!key) throw new Error('GEMINI_API_KEY is not set');
-  const genAI = new GoogleGenerativeAI(key);
-  const m = genAI.getGenerativeModel({
-    model: 'gemini-2.5-flash',
-    systemInstruction: effectiveSystem,
-    generationConfig: { responseMimeType: 'application/json' },
-  });
+  const ai = new GoogleGenAI({ apiKey: key });
 
   const header = `${effectiveModeGuidance}\n\nSTEP CONTEXT:\n${input.stepGuidance}\n\nTURN COUNT IN THIS STEP: ${input.turnCount}\n`;
 
@@ -53,6 +48,13 @@ export async function generate(input: GenerateInput): Promise<string> {
     { role: 'user' as const, parts: [{ text: input.latestUserMessage }] },
   ];
 
-  const result = await m.generateContent({ contents });
-  return result.response.text();
+  const response = await ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents,
+    config: {
+      systemInstruction: effectiveSystem,
+      responseMimeType: 'application/json',
+    },
+  });
+  return response.text || '';
 }
