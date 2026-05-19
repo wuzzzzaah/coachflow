@@ -70,6 +70,11 @@ Step-by-step (also see [`docs/whatsapp-setup.md`](docs/whatsapp-setup.md)):
 
 ## 4. Local Setup
 
+> **Note:** The `docker compose up -d` services are scaffolding for future integration tests.
+> The current application stack requires a hosted Supabase project (`SUPABASE_URL` / `SUPABASE_ANON_KEY`)
+> and an Upstash Redis account (`UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`) —
+> the local containers are not protocol-compatible with those clients.
+
 ```bash
 git clone <repo>
 cd ai-coach
@@ -105,8 +110,6 @@ ngrok http 3000
 | `GEMINI_API_KEY`                | Gemini API key                  | <https://aistudio.google.com>          |
 | `SUPABASE_URL`                  | Supabase project URL            | Supabase project → Settings → API      |
 | `SUPABASE_ANON_KEY`             | Supabase anon public key        | Supabase project → Settings → API      |
-| `DATABASE_URL`                  | Postgres connection URL         | For local docker-compose: `postgresql://postgres:postgres@localhost:5432/coachflow` |
-| `REDIS_URL`                     | Redis connection URL            | For local docker-compose: `redis://localhost:6379` |
 | `PORT`                          | Server port (default 3000)      | –                                      |
 | `NODE_ENV`                      | `development` or `production`   | –                                      |
 
