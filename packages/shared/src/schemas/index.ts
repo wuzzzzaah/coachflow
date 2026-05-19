@@ -107,3 +107,11 @@ export type AIResponseInput = z.infer<typeof aiResponseSchema>;
 export type JourneyInput = z.infer<typeof journeySchema>;
 export type JourneyStepInput = z.infer<typeof journeyStepSchema>;
 export type TenantInput = z.infer<typeof tenantSchema>;
+
+export const createTenantSchema = z.object({
+  name: z.string().min(1),
+  phone_number_id: z.string().optional(),
+  webhook_verify_token: z.string().optional(),
+});
+
+export const updateTenantSchema = createTenantSchema.partial();
