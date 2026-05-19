@@ -78,9 +78,13 @@ cp .env.example .env
 
 npm install
 
+# Start local infrastructure (Postgres and Redis)
+docker compose up -d
+
 # Apply database schema — either:
 #   - paste supabase/schema.sql into the Supabase SQL editor and run it, OR
-#   - if using the Supabase CLI: `supabase db push`
+#   - if using the Supabase CLI: `supabase db push`, OR
+#   - run `supabase/migrations/*.sql` in order against the local Postgres to initialise the schema.
 
 npm run dev
 
@@ -101,6 +105,8 @@ ngrok http 3000
 | `GEMINI_API_KEY`                | Gemini API key                  | <https://aistudio.google.com>          |
 | `SUPABASE_URL`                  | Supabase project URL            | Supabase project → Settings → API      |
 | `SUPABASE_ANON_KEY`             | Supabase anon public key        | Supabase project → Settings → API      |
+| `DATABASE_URL`                  | Postgres connection URL         | For local docker-compose: `postgresql://postgres:postgres@localhost:5432/coachflow` |
+| `REDIS_URL`                     | Redis connection URL            | For local docker-compose: `redis://localhost:6379` |
 | `PORT`                          | Server port (default 3000)      | –                                      |
 | `NODE_ENV`                      | `development` or `production`   | –                                      |
 
