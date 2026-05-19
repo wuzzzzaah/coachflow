@@ -18,7 +18,7 @@
   "dependencies": {
     "@coachflow/shared": "workspace:*",
     "@google/genai": "^2.4.0",
-    "@supabase/supabase-js": "^2.45.0",
+    "@supabase/supabase-js": "^2.106.0",
     "@types/cors": "^2.8.19",
     "@upstash/redis": "^1.38.0",
     "axios": "^1.7.7",
