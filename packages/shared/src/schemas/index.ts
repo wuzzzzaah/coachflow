@@ -115,3 +115,6 @@ export const createTenantSchema = z.object({
 });
 
 export const updateTenantSchema = createTenantSchema.partial();
+
+export const promptKeySchema = z.enum(['system', 'coaching', 'roleplay', 'reflection', 'scoring']);
+export type PromptKey = z.infer<typeof promptKeySchema>;

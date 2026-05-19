@@ -14,7 +14,7 @@ import { createStep, updateStep, deleteStep, reorderSteps } from './db/journeySt
 import { getUserByNumber } from './db/users';
 import { getScoresForUser } from './db/scores';
 import { getSessionMessages } from './db/sessions';
-import { listTenants, createTenant, getTenantById, updateTenant, setTenantWhatsAppToken } from './db/tenants';
+import { listTenants, createTenant, getTenantById, updateTenant, setTenantWhatsAppToken, getTenantPromptOverrides, upsertTenantPrompt, deleteTenantPrompt } from './db/tenants';
 import { requireAuth, requireRole } from './middleware/auth';
 import {
   createJourneySchema,
@@ -24,6 +24,7 @@ import {
   reorderStepsSchema,
   createTenantSchema,
   updateTenantSchema,
+  promptKeySchema,
 } from '@coachflow/shared';
 
 // Session store — InMemorySessionStore is the default. Swap to RedisSessionStore in
@@ -293,6 +294,47 @@ app.get('/api/sessions/:id', async (req, res) => {
   try {
     const msgs = await getSessionMessages(req.params.id);
     return res.json(msgs);
+  } catch (err) {
+    return res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+
+
+app.get('/api/tenants/:id/prompts', requireRole('admin', 'super_admin'), async (req, res) => {
+  try {
+    const overrides = await getTenantPromptOverrides(req.params.id);
+    return res.json(overrides);
+  } catch (err) {
+    return res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+app.put('/api/tenants/:id/prompts/:key', requireRole('admin', 'super_admin'), async (req, res) => {
+  try {
+    const keyResult = promptKeySchema.safeParse(req.params.key);
+    if (!keyResult.success) {
+      return res.status(400).json({ error: 'invalid_prompt_key' });
+    }
+    const { content } = req.body;
+    if (typeof content !== 'string' || content.trim() === '') {
+      return res.status(400).json({ error: 'content_must_be_non_empty_string' });
+    }
+    await upsertTenantPrompt(req.params.id, keyResult.data, content);
+    return res.json({ success: true });
+  } catch (err) {
+    return res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+app.delete('/api/tenants/:id/prompts/:key', requireRole('admin', 'super_admin'), async (req, res) => {
+  try {
+    const keyResult = promptKeySchema.safeParse(req.params.key);
+    if (!keyResult.success) {
+      return res.status(400).json({ error: 'invalid_prompt_key' });
+    }
+    await deleteTenantPrompt(req.params.id, keyResult.data);
+    return res.json({ success: true });
   } catch (err) {
     return res.status(500).json({ error: (err as Error).message });
   }

@@ -71,3 +71,21 @@ export async function setTenantWhatsAppToken(tenantId: string, token: string): P
   });
   if (error) throw new Error(`Set tenant WhatsApp token failed: ${error.message}`);
 }
+
+export async function upsertTenantPrompt(tenantId: string, key: string, content: string): Promise<void> {
+  const db = supabase();
+  const { error } = await db
+    .from('tenant_prompts')
+    .upsert({ tenant_id: tenantId, prompt_key: key, content }, { onConflict: 'tenant_id, prompt_key' });
+  if (error) throw new Error(`Upsert tenant prompt failed: ${error.message}`);
+}
+
+export async function deleteTenantPrompt(tenantId: string, key: string): Promise<void> {
+  const db = supabase();
+  const { error } = await db
+    .from('tenant_prompts')
+    .delete()
+    .eq('tenant_id', tenantId)
+    .eq('prompt_key', key);
+  if (error) throw new Error(`Delete tenant prompt failed: ${error.message}`);
+}
