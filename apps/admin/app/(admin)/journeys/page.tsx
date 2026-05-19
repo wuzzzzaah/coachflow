@@ -6,7 +6,7 @@ import JourneysClientPage from './_components/JourneysClientPage';
 // We must provide an async parameter object for Page components in Next.js 15+
 export default async function JourneysPage({ searchParams }: { searchParams: Promise<{ tenantId?: string }> }) {
   const params = await searchParams;
-  const tenantId = params.tenantId || process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID || 'c07ab0a1-43ef-4b47-b353-06dc72c21dc5';
+  const tenantId = params.tenantId || process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID || '';
 
   const res = await apiFetch(`/api/journeys?tenantId=${tenantId}`);
   let journeys: JourneyRow[] = [];
