@@ -11,7 +11,7 @@ import { InMemorySessionStore } from './engine/inMemorySessionStore';
 import { RedisSessionStore } from './engine/redisSessionStore';
 import { listJourneys, getJourney, createJourney, updateJourney, deleteJourney } from './db/journeyLoader';
 import { createStep, updateStep, deleteStep, reorderSteps } from './db/journeySteps';
-import { getUserByNumber } from './db/users';
+import { getUserByNumber, searchUsers, getUserProgress } from './db/users';
 import { getScoresForUser } from './db/scores';
 import { getSessionMessages } from './db/sessions';
 import { listTenants, createTenant, getTenantById, updateTenant, setTenantWhatsAppToken, getTenantPromptOverrides, upsertTenantPrompt, deleteTenantPrompt } from './db/tenants';
@@ -265,6 +265,31 @@ app.put('/api/journeys/:id/steps/reorder', requireRole('admin'), async (req, res
 
     await reorderSteps(tenantId, req.params.id, parsed.data.order);
     return res.json({ status: 'reordered' });
+  } catch (err) {
+    return res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+app.get('/api/users', requireRole('admin', 'super_admin'), async (req, res) => {
+  try {
+    const tenantId = (req.query.tenantId as string) ?? process.env.DEFAULT_TENANT_ID ?? '';
+    if (!tenantId) return res.status(400).json({ error: 'tenantId query param required' });
+
+    const q = req.query.q as string | undefined;
+    const users = await searchUsers(tenantId, q);
+    return res.json(users);
+  } catch (err) {
+    return res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+app.get('/api/users/:id/progress', requireRole('admin', 'super_admin'), async (req, res) => {
+  try {
+    const tenantId = (req.query.tenantId as string) ?? process.env.DEFAULT_TENANT_ID ?? '';
+    if (!tenantId) return res.status(400).json({ error: 'tenantId query param required' });
+
+    const progress = await getUserProgress(tenantId, req.params.id);
+    return res.json(progress);
   } catch (err) {
     return res.status(500).json({ error: (err as Error).message });
   }
