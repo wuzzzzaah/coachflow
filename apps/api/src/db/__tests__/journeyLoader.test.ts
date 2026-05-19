@@ -40,6 +40,7 @@ function makeChain(data: unknown, error: unknown = null) {
   chain.select = vi.fn(() => chain);
   chain.eq = vi.fn(() => chain);
   chain.in = vi.fn(() => chain);
+  chain.is = vi.fn(() => chain);
   chain.maybeSingle = vi.fn(() => Promise.resolve({ data, error }));
   // Make the chain thenable for queries that don't call maybeSingle.
   const promise = Promise.resolve({ data, error });
