@@ -91,6 +91,7 @@ export interface Tenant {
   name: string;
   phone_number_id: string | null;
   webhook_verify_token: string | null;
+  whatsapp_token_secret_id: string | null;
   created_at: string;
 }
 

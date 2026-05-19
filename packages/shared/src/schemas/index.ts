@@ -99,6 +99,7 @@ export const tenantSchema = z.object({
   name: z.string().min(1),
   phone_number_id: z.string().nullable(),
   webhook_verify_token: z.string().nullable(),
+  whatsapp_token_secret_id: z.string().uuid().nullable().optional(),
   created_at: z.string(),
 });
 
