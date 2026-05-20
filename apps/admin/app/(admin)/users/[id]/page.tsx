@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import React, { useEffect, useState, use } from "react";
 import Link from "next/link";
 import { apiFetch } from "../../../../lib/api";
 
@@ -12,6 +12,24 @@ interface UserProgress {
   last_active_at: string | null;
 }
 
+interface ScoreDimension {
+  name: string;
+  score: number;
+  feedback: string;
+}
+
+interface UserScore {
+  id: string;
+  session_id: string;
+  journey_id: string;
+  step_id: string;
+  score: number;
+  max_score: number;
+  criteria: ScoreDimension[];
+  feedback: string;
+  created_at: string;
+}
+
 export default function UserProgressPage({
   params,
 }: {
@@ -20,31 +38,51 @@ export default function UserProgressPage({
   const resolvedParams = use(params);
   const userId = resolvedParams.id;
   const [progress, setProgress] = useState<UserProgress[]>([]);
+  const [scores, setScores] = useState<UserScore[]>([]);
+  const [expandedScoreIds, setExpandedScoreIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchProgress() {
+    async function fetchData() {
       setLoading(true);
       try {
         const tenantId =
           process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID ||
           "00000000-0000-0000-0000-000000000000";
-        const res = await apiFetch(
-          `/api/users/${userId}/progress?tenantId=${tenantId}`
-        );
-        const data = await res.json();
-        setProgress(data);
+
+        const [progressRes, scoresRes] = await Promise.all([
+          apiFetch(`/api/users/${userId}/progress?tenantId=${tenantId}`),
+          apiFetch(`/api/users/${userId}/scores?tenantId=${tenantId}`)
+        ]);
+
+        const progressData = await progressRes.json();
+        const scoresData = await scoresRes.json();
+
+        setProgress(Array.isArray(progressData) ? progressData : []);
+        setScores(Array.isArray(scoresData) ? scoresData : []);
       } catch (error) {
-        console.error("Error fetching user progress:", error);
+        console.error("Error fetching user data:", error);
       } finally {
         setLoading(false);
       }
     }
 
     if (userId) {
-      fetchProgress();
+      fetchData();
     }
   }, [userId]);
+
+  const toggleScoreExpanded = (id: string) => {
+    setExpandedScoreIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  };
 
   return (
     <div className="p-8 max-w-6xl mx-auto flex flex-col gap-6">
@@ -115,6 +153,101 @@ export default function UserProgressPage({
                         : "Never"}
                     </td>
                   </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-4 mt-8">
+        <h2 className="text-xl font-semibold">Session Scores</h2>
+        <div className="overflow-x-auto rounded-lg border dark:border-zinc-700">
+          <table className="min-w-full divide-y divide-zinc-200 dark:divide-zinc-700">
+            <thead className="bg-zinc-50 dark:bg-zinc-800">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider dark:text-zinc-400">
+                  Date
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider dark:text-zinc-400">
+                  Session ID
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider dark:text-zinc-400">
+                  Overall Score
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-zinc-500 uppercase tracking-wider dark:text-zinc-400">
+                  Action
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-zinc-200 dark:bg-zinc-900 dark:divide-zinc-700">
+              {loading ? (
+                <tr>
+                  <td colSpan={4} className="px-6 py-4 text-center text-zinc-500">
+                    Loading scores...
+                  </td>
+                </tr>
+              ) : scores.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="px-6 py-4 text-center text-zinc-500">
+                    No scores found for this user.
+                  </td>
+                </tr>
+              ) : (
+                scores.map((s) => (
+                  <React.Fragment key={s.id}>
+                    <tr className="hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap text-zinc-900 dark:text-zinc-100">
+                        {new Date(s.created_at).toLocaleString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-zinc-600 dark:text-zinc-400 font-mono text-sm">
+                        {s.session_id.substring(0, 8)}...
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-zinc-900 dark:text-zinc-100 font-medium">
+                        {s.score} / {s.max_score}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button
+                          onClick={() => toggleScoreExpanded(s.id)}
+                          className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                        >
+                          {expandedScoreIds.has(s.id) ? "Hide Details" : "View Details"}
+                        </button>
+                      </td>
+                    </tr>
+                    {expandedScoreIds.has(s.id) && (
+                      <tr className="bg-zinc-50 dark:bg-zinc-800/50">
+                        <td colSpan={4} className="px-6 py-4">
+                          <div className="flex flex-col gap-4">
+                            {s.feedback && (
+                              <div className="text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap">
+                                <strong>Feedback:</strong>
+                                <p className="mt-1">{s.feedback}</p>
+                              </div>
+                            )}
+                            {s.criteria && s.criteria.length > 0 && (
+                              <div>
+                                <strong className="text-sm text-zinc-700 dark:text-zinc-300 block mb-2">Dimensions:</strong>
+                                <div className="grid gap-3 sm:grid-cols-2">
+                                  {s.criteria.map((dim, idx) => (
+                                    <div key={idx} className="bg-white dark:bg-zinc-900 border dark:border-zinc-700 p-3 rounded shadow-sm">
+                                      <div className="flex justify-between items-center mb-1">
+                                        <span className="font-medium text-zinc-900 dark:text-zinc-100">{dim.name}</span>
+                                        <span className="text-sm bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 px-2 py-0.5 rounded font-mono">
+                                          {dim.score}
+                                        </span>
+                                      </div>
+                                      <p className="text-xs text-zinc-600 dark:text-zinc-400">{dim.feedback}</p>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
                 ))
               )}
             </tbody>
