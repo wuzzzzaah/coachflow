@@ -169,3 +169,18 @@ export const cohortMemberSchema = z.object({
 
 export type Cohort = z.infer<typeof cohortSchema>;
 export type CohortMember = z.infer<typeof cohortMemberSchema>;
+
+export const notificationConfigSchema = z.object({
+  id: z.string().uuid().optional(),
+  tenant_id: z.string().uuid(),
+  email_to: z.string().nullable().optional(),
+  notify_journey_complete: z.boolean(),
+  notify_low_score: z.boolean(),
+  low_score_threshold: z.number().min(0).max(10),
+  notify_idle_user: z.boolean(),
+  resend_api_key: z.string().nullable().optional(),
+  created_at: z.string().optional(),
+  updated_at: z.string().optional(),
+});
+
+export type NotificationConfig = z.infer<typeof notificationConfigSchema>;

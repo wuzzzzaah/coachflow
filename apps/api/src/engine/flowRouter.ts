@@ -28,6 +28,7 @@ import { saveScore, getScoresForUser, getLatestScoreForStep } from '../db/scores
 import { listJourneys, getJourney, getStep } from '../db/journeyLoader';
 import { getTenantPromptOverrides } from '../db/tenants';
 import { deliverEvent } from '../webhooks/deliver';
+import { notifyJourneyComplete, notifyLowScore } from '../notifications/notify';
 import { AIResponse, JourneyStep, Session } from '@coachflow/shared';
 
 const KEYWORDS = {
@@ -408,6 +409,14 @@ async function runStepTurn(
       score: aiResponse.score,
     }).catch((err) => console.error(`[flowRouter] saveScore failed: ${(err as Error).message}`));
     await sendTextMessage(session.whatsappNumber, formatScoreCard(aiResponse.score), creds);
+
+    const journey = await getJourney(tenantId, session.currentJourneyId);
+    notifyLowScore(
+      tenantId,
+      session.userId,
+      journey?.title ?? session.currentJourneyId,
+      aiResponse.score.overall,
+    ).catch((err) => console.error(`[flowRouter] notifyLowScore failed: ${err.message}`));
   }
 
   log(
@@ -528,6 +537,9 @@ async function advanceStep(
       tenantId,
       journeyId: session.currentJourneyId,
     });
+    notifyJourneyComplete(tenantId, session.userId, journey.title).catch((err) =>
+      console.error(`[flowRouter] notifyJourneyComplete failed: ${err.message}`),
+    );
     await updateSession(session.whatsappNumber, {
       currentMode: 'journey_complete',
       currentSessionId: null,

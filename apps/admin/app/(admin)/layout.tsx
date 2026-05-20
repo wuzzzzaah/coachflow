@@ -24,6 +24,7 @@ export default async function AdminLayout({
     { name: 'Analytics', href: '/analytics' },
     { name: 'Audit Log', href: '/audit-log' },
     { name: 'Prompts', href: '/prompts' },
+    { name: 'Notifications', href: '/notifications' },
     { name: 'Webhooks', href: '/webhooks' },
     { name: 'Tenants', href: '/tenants' },
   ]
