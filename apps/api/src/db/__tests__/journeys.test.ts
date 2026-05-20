@@ -18,7 +18,7 @@ const sampleJourney: JourneyRow = {
   title: 'Source Journey',
   description: 'Source Description',
   estimated_minutes: 30,
-  version: 1,
+  version_number: 1,
   status: 'published',
   is_template: true,
   schedule_type: 'manual',

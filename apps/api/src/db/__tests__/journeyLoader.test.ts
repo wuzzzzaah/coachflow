@@ -18,7 +18,7 @@ const sampleJourney: JourneyRow = {
   title: 'Maritime Leadership',
   description: 'A leadership journey.',
   estimated_minutes: 45,
-  version: 1,
+  version_number: 1,
   status: 'published',
   is_template: false,
   schedule_type: 'manual',

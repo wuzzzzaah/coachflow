@@ -10,6 +10,7 @@ import {
 import { InMemorySessionStore } from './engine/inMemorySessionStore';
 import { RedisSessionStore } from './engine/redisSessionStore';
 import { listJourneys, getJourney, createJourney, updateJourney, deleteJourney } from './db/journeyLoader';
+import { listJourneyVersions, getActiveUserCount } from './db/journeyVersions';
 import { listTemplates, cloneJourney } from './db/journeys';
 import { createStep, updateStep, deleteStep, reorderSteps } from './db/journeySteps';
 import { getUserByNumber, searchUsers, getUserProgress } from './db/users';
@@ -163,6 +164,31 @@ app.get('/api/users/:id/data-export', requireRole('admin'), async (req, res) => 
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Content-Disposition', `attachment; filename="user-data-${req.params.id}.json"`);
     return res.json(data);
+  } catch (err) {
+    return res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+// Journey versioning APIs
+app.get('/api/journeys/:id/versions', requireRole('admin', 'super_admin'), async (req, res) => {
+  try {
+    const tenantId = (req.query.tenantId as string) ?? process.env.DEFAULT_TENANT_ID ?? '';
+    if (!tenantId) return res.status(400).json({ error: 'tenantId query param required' });
+
+    const versions = await listJourneyVersions(tenantId, req.params.id);
+    return res.json(versions);
+  } catch (err) {
+    return res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+app.get('/api/journeys/:id/active-user-count', requireRole('admin', 'super_admin'), async (req, res) => {
+  try {
+    const tenantId = (req.query.tenantId as string) ?? process.env.DEFAULT_TENANT_ID ?? '';
+    if (!tenantId) return res.status(400).json({ error: 'tenantId query param required' });
+
+    const count = await getActiveUserCount(tenantId, req.params.id);
+    return res.json({ count });
   } catch (err) {
     return res.status(500).json({ error: (err as Error).message });
   }

@@ -26,6 +26,7 @@ import {
 import { ensureUserJourney, advanceUserJourney, completeUserJourney } from '../db/journeys';
 import { saveScore, getScoresForUser, getLatestScoreForStep } from '../db/scores';
 import { listJourneys, getJourney, getStep } from '../db/journeyLoader';
+import { getActiveVersionForUser } from '../db/journeyVersions';
 import { getTenantPromptOverrides } from '../db/tenants';
 import { deliverEvent } from '../webhooks/deliver';
 import { notifyJourneyComplete, notifyLowScore } from '../notifications/notify';
@@ -119,7 +120,8 @@ export async function handleInbound(
   // Handle journey selection from a WhatsApp list message.
   if (msg.kind === 'list' && msg.replyId) {
     if (await getJourney(tenantId, msg.replyId)) {
-      await startJourney(session, msg.replyId, tenantId, senderCreds);
+      const resolvedId = await getActiveVersionForUser(user.id, msg.replyId, tenantId);
+      await startJourney(session, resolvedId, tenantId, senderCreds);
       return;
     }
   }
@@ -136,7 +138,8 @@ export async function handleInbound(
   if (session.currentMode === 'menu') {
     const journeyId = msg.replyId ?? findJourneyByText(inputText, await listJourneys(tenantId));
     if (journeyId && (await getJourney(tenantId, journeyId))) {
-      await startJourney(session, journeyId, tenantId, senderCreds);
+      const resolvedId = await getActiveVersionForUser(user.id, journeyId, tenantId);
+      await startJourney(session, resolvedId, tenantId, senderCreds);
       return;
     }
     await sendWelcome(session, tenantId, senderCreds);
@@ -297,7 +300,8 @@ async function beginStep(
 ): Promise<void> {
   const session = await getSession(whatsappNumber);
   if (!session || !session.currentJourneyId) return;
-  const step = await getStep(tenantId, session.currentJourneyId, session.currentStepIndex);
+  const resolvedJourneyId = await getActiveVersionForUser(session.userId, session.currentJourneyId, tenantId);
+  const step = await getStep(tenantId, resolvedJourneyId, session.currentStepIndex);
   if (!step) {
     await sendTextMessage(
       whatsappNumber,
@@ -353,7 +357,8 @@ async function runStepTurn(
     await sendWelcome(session, tenantId, creds);
     return;
   }
-  const step = await getStep(tenantId, session.currentJourneyId, session.currentStepIndex);
+  const resolvedJourneyId = await getActiveVersionForUser(session.userId, session.currentJourneyId, tenantId);
+  const step = await getStep(tenantId, resolvedJourneyId, session.currentStepIndex);
   if (!step) return;
 
   await appendTurn(session.whatsappNumber, { role: 'user', content: userText });
@@ -506,10 +511,11 @@ async function advanceStep(
   creds?: SenderCredentials,
 ): Promise<void> {
   if (!session.currentJourneyId || !session.currentSessionId) return;
-  const journey = await getJourney(tenantId, session.currentJourneyId);
+  const resolvedJourneyId = await getActiveVersionForUser(session.userId, session.currentJourneyId, tenantId);
+  const journey = await getJourney(tenantId, resolvedJourneyId);
   if (!journey) return;
 
-  const step = await getStep(tenantId, session.currentJourneyId, session.currentStepIndex);
+  const step = await getStep(tenantId, resolvedJourneyId, session.currentStepIndex);
   if (!step) return;
 
   await dbEndSession(session.currentSessionId, 'step advanced').catch(() => undefined);
