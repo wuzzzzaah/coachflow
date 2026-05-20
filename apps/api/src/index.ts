@@ -20,6 +20,7 @@ import { listTenants, createTenant, getTenantById, updateTenant, setTenantWhatsA
 import { listWebhooks, createWebhook, deleteWebhook } from './db/webhooks';
 import { getCompletionRates, getStepFunnel, getScoreDistribution } from './db/analytics';
 import { getIdleUsers, logReminder } from './db/reminders';
+import { writeAuditLog, getAuditLog } from './db/auditLog';
 import {
   listCohorts,
   getCohort,
@@ -123,6 +124,19 @@ app.get('/api/webhooks', requireRole('admin', 'super_admin'), async (req, res) =
   }
 });
 
+app.get('/api/audit-log', requireRole('admin', 'super_admin'), async (req, res) => {
+  try {
+    const tenantId = (req.query.tenantId as string) ?? process.env.DEFAULT_TENANT_ID ?? '';
+    if (!tenantId) return res.status(400).json({ error: 'tenantId query param required' });
+
+    const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 50;
+    const logs = await getAuditLog(tenantId, limit);
+    return res.json(logs);
+  } catch (err) {
+    return res.status(500).json({ error: (err as Error).message });
+  }
+});
+
 app.post('/api/webhooks', requireRole('admin', 'super_admin'), async (req, res) => {
   try {
     const tenantId = (req.query.tenantId as string) ?? process.env.DEFAULT_TENANT_ID ?? '';
@@ -134,6 +148,17 @@ app.post('/api/webhooks', requireRole('admin', 'super_admin'), async (req, res) 
     }
 
     const webhook = await createWebhook(tenantId, parsed.data);
+
+    writeAuditLog({
+      tenantId,
+      actorId: req.user!.id,
+      actorEmail: req.user!.email,
+      action: 'webhook.create',
+      resource: 'webhook',
+      resourceId: webhook.id,
+      metadata: parsed.data,
+    });
+
     return res.status(201).json(webhook);
   } catch (err) {
     return res.status(500).json({ error: (err as Error).message });
@@ -146,6 +171,16 @@ app.delete('/api/webhooks/:id', requireRole('admin', 'super_admin'), async (req,
     if (!tenantId) return res.status(400).json({ error: 'tenantId query param required' });
 
     await deleteWebhook(tenantId, req.params.id);
+
+    writeAuditLog({
+      tenantId,
+      actorId: req.user!.id,
+      actorEmail: req.user!.email,
+      action: 'webhook.delete',
+      resource: 'webhook',
+      resourceId: req.params.id,
+    });
+
     return res.status(204).send();
   } catch (err) {
     return res.status(500).json({ error: (err as Error).message });
@@ -185,6 +220,17 @@ app.post('/api/cohorts', requireRole('admin'), async (req, res) => {
       return res.status(400).json({ error: 'tenantId, name, and journeyId are required' });
     }
     const cohort = await createCohort(tenantId, name, journeyId, startsAt, endsAt);
+
+    writeAuditLog({
+      tenantId,
+      actorId: req.user!.id,
+      actorEmail: req.user!.email,
+      action: 'cohort.create',
+      resource: 'cohort',
+      resourceId: cohort.id,
+      metadata: { name, journeyId, startsAt, endsAt },
+    });
+
     return res.status(201).json(cohort);
   } catch (err) {
     return res.status(500).json({ error: (err as Error).message });
@@ -197,6 +243,16 @@ app.delete('/api/cohorts/:id', requireRole('admin'), async (req, res) => {
     if (!tenantId) return res.status(400).json({ error: 'tenantId query param required' });
 
     await deleteCohort(req.params.id, tenantId);
+
+    writeAuditLog({
+      tenantId,
+      actorId: req.user!.id,
+      actorEmail: req.user!.email,
+      action: 'cohort.delete',
+      resource: 'cohort',
+      resourceId: req.params.id,
+    });
+
     return res.status(204).send();
   } catch (err) {
     return res.status(500).json({ error: (err as Error).message });
@@ -349,6 +405,17 @@ app.post('/api/tenants', requireRole('super_admin'), async (req, res) => {
       return res.status(400).json({ error: 'invalid input', details: parsed.error });
     }
     const tenant = await createTenant(parsed.data);
+
+    writeAuditLog({
+      tenantId: tenant.id,
+      actorId: req.user!.id,
+      actorEmail: req.user!.email,
+      action: 'tenant.create',
+      resource: 'tenant',
+      resourceId: tenant.id,
+      metadata: parsed.data,
+    });
+
     return res.status(201).json(tenant);
   } catch (err) {
     return res.status(500).json({ error: (err as Error).message });
@@ -372,6 +439,17 @@ app.patch('/api/tenants/:id', requireRole('super_admin'), async (req, res) => {
       return res.status(400).json({ error: 'invalid input', details: parsed.error });
     }
     const tenant = await updateTenant(req.params.id, parsed.data);
+
+    writeAuditLog({
+      tenantId: req.params.id,
+      actorId: req.user!.id,
+      actorEmail: req.user!.email,
+      action: 'tenant.update',
+      resource: 'tenant',
+      resourceId: req.params.id,
+      metadata: parsed.data,
+    });
+
     return res.json(tenant);
   } catch (err) {
     return res.status(500).json({ error: (err as Error).message });
@@ -434,6 +512,17 @@ app.post('/api/journeys', requireRole('admin'), async (req, res) => {
     if (!parsed.success) return res.status(400).json({ error: 'Invalid body', details: parsed.error.issues });
 
     await createJourney(tenantId, parsed.data);
+
+    writeAuditLog({
+      tenantId,
+      actorId: req.user!.id,
+      actorEmail: req.user!.email,
+      action: 'journey.create',
+      resource: 'journey',
+      resourceId: parsed.data.id,
+      metadata: parsed.data,
+    });
+
     return res.status(201).json({ status: 'created', id: parsed.data.id });
   } catch (err) {
     return res.status(500).json({ error: (err as Error).message });
@@ -464,6 +553,17 @@ app.patch('/api/journeys/:id', requireRole('admin'), async (req, res) => {
     if (!existing) return res.status(404).json({ error: 'not_found' });
 
     await updateJourney(tenantId, req.params.id, parsed.data);
+
+    writeAuditLog({
+      tenantId,
+      actorId: req.user!.id,
+      actorEmail: req.user!.email,
+      action: 'journey.update',
+      resource: 'journey',
+      resourceId: req.params.id,
+      metadata: parsed.data,
+    });
+
     return res.json({ status: 'updated' });
   } catch (err) {
     return res.status(500).json({ error: (err as Error).message });
@@ -477,6 +577,17 @@ app.post('/api/journeys/:id/clone', requireRole('admin'), async (req, res) => {
 
     const { title } = req.body;
     const newJourney = await cloneJourney(req.params.id, tenantId, title);
+
+    writeAuditLog({
+      tenantId,
+      actorId: req.user!.id,
+      actorEmail: req.user!.email,
+      action: 'journey.clone',
+      resource: 'journey',
+      resourceId: newJourney.id,
+      metadata: { sourceJourneyId: req.params.id, title },
+    });
+
     return res.status(201).json(newJourney);
   } catch (err) {
     return res.status(500).json({ error: (err as Error).message });
@@ -492,6 +603,16 @@ app.delete('/api/journeys/:id', requireRole('admin'), async (req, res) => {
     if (!existing) return res.status(404).json({ error: 'not_found' });
 
     await deleteJourney(tenantId, req.params.id);
+
+    writeAuditLog({
+      tenantId,
+      actorId: req.user!.id,
+      actorEmail: req.user!.email,
+      action: 'journey.delete',
+      resource: 'journey',
+      resourceId: req.params.id,
+    });
+
     return res.status(204).send();
   } catch (err) {
     return res.status(500).json({ error: (err as Error).message });
@@ -673,6 +794,17 @@ app.put('/api/tenants/:id/prompts/:key', requireRole('admin', 'super_admin'), as
       return res.status(400).json({ error: 'content_must_be_non_empty_string' });
     }
     await upsertTenantPrompt(req.params.id, keyResult.data, content);
+
+    writeAuditLog({
+      tenantId: req.params.id,
+      actorId: req.user!.id,
+      actorEmail: req.user!.email,
+      action: 'prompt.update',
+      resource: 'prompt',
+      resourceId: `${req.params.id}:${keyResult.data}`,
+      metadata: { key: keyResult.data, content },
+    });
+
     return res.json({ success: true });
   } catch (err) {
     return res.status(500).json({ error: (err as Error).message });
@@ -686,6 +818,17 @@ app.delete('/api/tenants/:id/prompts/:key', requireRole('admin', 'super_admin'),
       return res.status(400).json({ error: 'invalid_prompt_key' });
     }
     await deleteTenantPrompt(req.params.id, keyResult.data);
+
+    writeAuditLog({
+      tenantId: req.params.id,
+      actorId: req.user!.id,
+      actorEmail: req.user!.email,
+      action: 'prompt.delete',
+      resource: 'prompt',
+      resourceId: `${req.params.id}:${keyResult.data}`,
+      metadata: { key: keyResult.data },
+    });
+
     return res.json({ success: true });
   } catch (err) {
     return res.status(500).json({ error: (err as Error).message });
