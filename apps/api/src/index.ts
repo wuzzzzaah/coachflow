@@ -23,6 +23,7 @@ import { getIdleUsers, logReminder } from './db/reminders';
 import { writeAuditLog, getAuditLog } from './db/auditLog';
 import { getNotificationConfig, upsertNotificationConfig } from './db/notifications';
 import { notifyIdleUser } from './notifications/notify';
+import { deliverScheduledSteps } from './scheduler/deliverScheduled';
 import {
   listCohorts,
   getCohort,
@@ -805,7 +806,17 @@ app.get('/api/analytics/scores', requireRole('admin', 'super_admin'), async (req
   }
 });
 
+app.post('/api/scheduler/run', requireRole('super_admin'), async (req, res) => {
+  try {
+    const tenantId = (req.query.tenantId as string) ?? process.env.DEFAULT_TENANT_ID ?? '';
+    if (!tenantId) return res.status(400).json({ error: 'tenantId query param required' });
 
+    const result = await deliverScheduledSteps(tenantId);
+    return res.json(result);
+  } catch (err) {
+    return res.status(500).json({ error: (err as Error).message });
+  }
+});
 
 app.get('/api/tenants/:id/prompts', requireRole('admin', 'super_admin'), async (req, res) => {
   try {
