@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, use } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { apiFetch } from "../../../../lib/api";
 import { downloadCsv } from "../../../../lib/downloadCsv";
 
@@ -36,11 +37,15 @@ export default function UserProgressPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const router = useRouter();
   const resolvedParams = use(params);
   const userId = resolvedParams.id;
   const [progress, setProgress] = useState<UserProgress[]>([]);
   const [scores, setScores] = useState<UserScore[]>([]);
   const [expandedScoreIds, setExpandedScoreIds] = useState<Set<string>>(new Set());
+  const [isEraseModalOpen, setIsEraseModalOpen] = useState(false);
+  const [eraseConfirmText, setEraseConfirmText] = useState("");
+  const [erasing, setErasing] = useState(false);
 
   // Group scores by journey and calculate averages
   const journeyAverages = React.useMemo(() => {
@@ -130,6 +135,40 @@ export default function UserProgressPage({
     }
   };
 
+  const handleExportJson = async () => {
+    try {
+      const tenantId = process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID || "00000000-0000-0000-0000-000000000000";
+      await downloadCsv(`/api/users/${userId}/data-export?tenantId=${tenantId}`, `user-data-${userId}.json`);
+    } catch (error) {
+      console.error("JSON export failed:", error);
+      alert("Failed to export user JSON");
+    }
+  };
+
+  const handleEraseUser = async () => {
+    if (eraseConfirmText !== "DELETE") return;
+    setErasing(true);
+    try {
+      const tenantId = process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID || "00000000-0000-0000-0000-000000000000";
+      const res = await apiFetch(`/api/users/${userId}?tenantId=${tenantId}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        alert("User successfully erased");
+        router.push("/users");
+      } else {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to erase user");
+      }
+    } catch (error) {
+      console.error("Erasure failed:", error);
+      alert(`Failed to erase user: ${(error as Error).message}`);
+    } finally {
+      setErasing(false);
+      setIsEraseModalOpen(false);
+    }
+  };
+
   return (
     <div className="p-8 max-w-6xl mx-auto flex flex-col gap-6">
       <div className="flex flex-col gap-2">
@@ -140,12 +179,26 @@ export default function UserProgressPage({
           >
             ← Back to Users
           </Link>
-          <button
-            onClick={handleExport}
-            className="px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm font-medium"
-          >
-            Export CSV
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={handleExportJson}
+              className="px-3 py-1.5 bg-zinc-800 text-white rounded-md hover:bg-zinc-700 transition-colors text-sm font-medium"
+            >
+              Export Data (JSON)
+            </button>
+            <button
+              onClick={handleExport}
+              className="px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm font-medium"
+            >
+              Export CSV
+            </button>
+            <button
+              onClick={() => setIsEraseModalOpen(true)}
+              className="px-3 py-1.5 border border-red-600 text-red-600 rounded-md hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors text-sm font-medium"
+            >
+              Erase User
+            </button>
+          </div>
         </div>
         <h1 className="text-2xl font-bold">User Progress</h1>
         <p className="text-sm text-zinc-500 font-mono">ID: {userId}</p>
@@ -377,6 +430,46 @@ export default function UserProgressPage({
           </table>
         </div>
       </div>
+
+      {isEraseModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-xl max-w-md w-full p-6 border dark:border-zinc-800">
+            <h2 className="text-xl font-bold mb-2 text-red-600">Erase User Data</h2>
+            <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-4">
+              This will permanently anonymise this user&apos;s personal data and delete all conversation history. This cannot be undone.
+            </p>
+            <p className="text-sm font-medium mb-2">
+              Type <span className="font-bold text-red-600">DELETE</span> to confirm:
+            </p>
+            <input
+              type="text"
+              value={eraseConfirmText}
+              onChange={(e) => setEraseConfirmText(e.target.value)}
+              placeholder="DELETE"
+              className="w-full px-3 py-2 border rounded-md dark:bg-zinc-800 dark:border-zinc-700 mb-6 font-bold"
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsEraseModalOpen(false);
+                  setEraseConfirmText("");
+                }}
+                className="px-4 py-2 text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleEraseUser}
+                disabled={eraseConfirmText !== "DELETE" || erasing}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors disabled:opacity-50 font-medium"
+              >
+                {erasing ? "Erasing..." : "Permanently Erase User"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

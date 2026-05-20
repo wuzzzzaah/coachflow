@@ -172,3 +172,44 @@ export interface ISessionStore {
   delete(whatsappNumber: string): Promise<void>;
   size(): Promise<number>;
 }
+
+export interface UserProgress {
+  journey_id: string;
+  journey_title: string;
+  completed_steps: number;
+  total_steps: number;
+  last_active_at: string | null;
+}
+
+export interface UserScore {
+  id: string;
+  session_id: string;
+  journey_id: string;
+  step_id: string;
+  score: number;
+  max_score: number;
+  criteria: ScoreDimension[];
+  feedback: string;
+  created_at: string;
+}
+
+export interface SessionMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  created_at: string;
+}
+
+export interface UserDataExport {
+  user: {
+    id: string;
+    whatsapp_number: string;
+    name: string | null;
+    created_at: string;
+  };
+  journeyProgress: UserProgress[];
+  sessionScores: UserScore[];
+  sessionMessages: { sessionId: string; messages: SessionMessage[] }[];
+  reminders: { sent_at: string }[];
+  exportedAt: string;
+}
