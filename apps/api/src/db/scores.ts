@@ -39,3 +39,24 @@ export async function getScoresForUser(userId: string, journeyId?: string) {
   if (error) throw new Error(`Get scores failed: ${error.message}`);
   return data ?? [];
 }
+
+/** Retrieve the latest score for a specific user, journey, and step. */
+export async function getLatestScoreForStep(
+  userId: string,
+  journeyId: string,
+  stepId: string,
+): Promise<number | null> {
+  const db = supabase();
+  const { data, error } = await db
+    .from('scores')
+    .select('score')
+    .eq('user_id', userId)
+    .eq('journey_id', journeyId)
+    .eq('step_id', stepId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw new Error(`Get latest score for step failed: ${error.message}`);
+  return data?.score ?? null;
+}

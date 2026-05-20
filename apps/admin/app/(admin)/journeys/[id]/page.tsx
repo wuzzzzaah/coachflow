@@ -15,6 +15,9 @@ interface Step {
   min_turns: number;
   step_guidance?: string;
   scoring_criteria?: string[] | null;
+  branch_on_low_score: boolean;
+  branch_score_threshold: number | null;
+  branch_step_index: number | null;
 }
 
 interface Journey {
@@ -379,6 +382,49 @@ export default function JourneyDetailsPage() {
                     onChange={e => setStepEditData({ ...stepEditData, min_turns: parseInt(e.target.value) || 0 })}
                   />
                 </div>
+
+                {step.scoring_criteria && step.scoring_criteria.length > 0 && (
+                  <div className="border-t pt-4 mt-4">
+                    <h4 className="text-sm font-bold mb-3">Branching</h4>
+                    <div className="flex items-center gap-2 mb-3">
+                      <input
+                        type="checkbox"
+                        id="branch_on_low_score"
+                        checked={stepEditData.branch_on_low_score || false}
+                        onChange={e => setStepEditData({ ...stepEditData, branch_on_low_score: e.target.checked })}
+                      />
+                      <label htmlFor="branch_on_low_score" className="text-sm font-medium">Branch on low score</label>
+                    </div>
+
+                    {stepEditData.branch_on_low_score && (
+                      <div className="grid grid-cols-2 gap-4 ml-6">
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Score threshold (0-10)</label>
+                          <input
+                            type="number"
+                            step="0.1"
+                            min="0"
+                            max="10"
+                            className="w-full border p-2 rounded"
+                            value={stepEditData.branch_score_threshold ?? ''}
+                            onChange={e => setStepEditData({ ...stepEditData, branch_score_threshold: parseFloat(e.target.value) || null })}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Go to step # (index)</label>
+                          <input
+                            type="number"
+                            min="0"
+                            className="w-full border p-2 rounded"
+                            value={stepEditData.branch_step_index ?? ''}
+                            onChange={e => setStepEditData({ ...stepEditData, branch_step_index: parseInt(e.target.value) ?? null })}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <div className="flex gap-2">
                   <button
                     className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm"
@@ -441,6 +487,9 @@ export default function JourneyDetailsPage() {
                           opening_message: step.opening_message,
                           step_guidance: step.step_guidance,
                           min_turns: step.min_turns,
+                          branch_on_low_score: step.branch_on_low_score,
+                          branch_score_threshold: step.branch_score_threshold,
+                          branch_step_index: step.branch_step_index,
                         });
                         setEditingStepId(step.id);
                       }}

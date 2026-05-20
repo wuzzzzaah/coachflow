@@ -34,6 +34,7 @@ vi.mock('../../db/journeys', () => ({
 vi.mock('../../db/scores', () => ({
   saveScore: vi.fn().mockResolvedValue(undefined),
   getScoresForUser: vi.fn().mockResolvedValue([]),
+  getLatestScoreForStep: vi.fn().mockResolvedValue(null),
 }));
 
 vi.mock('../../db/journeyLoader', () => ({
@@ -158,6 +159,80 @@ describe('handleInbound — first message triggers onboarding', () => {
       expect.any(Array),
       undefined,
     );
+  });
+});
+
+describe('handleInbound — conditional branching', () => {
+  it('branches to branchStepIndex when score is below threshold', async () => {
+    const { getLatestScoreForStep } = await import('../../db/scores');
+
+    const startMsg = firstMessage(buttonFixture);
+    await handleInbound(startMsg, TENANT);
+
+    vi.mocked(getJourney).mockResolvedValue({ ...SAMPLE_JOURNEY, totalSteps: 10 });
+
+    const branchingStep = {
+      ...SAMPLE_STEP,
+      branchOnLowScore: true,
+      branchScoreThreshold: 7,
+      branchStepIndex: 5,
+    };
+    const remedialStep = { ...SAMPLE_STEP, id: 'step-remedial', index: 5, openingMessage: 'Remedial' };
+
+    vi.mocked(getStep)
+      .mockResolvedValueOnce(branchingStep) // runStepTurn
+      .mockResolvedValueOnce(branchingStep) // advanceStep
+      .mockResolvedValueOnce(remedialStep); // beginStep
+
+    vi.mocked(getLatestScoreForStep).mockResolvedValue(5);
+    vi.mocked(generate).mockResolvedValue(
+      JSON.stringify({ message: 'Low score turn', intent: 'advance', shouldAdvance: true }),
+    );
+
+    await handleInbound({
+      whatsappNumber: startMsg.whatsappNumber,
+      whatsappMessageId: 'wamid.branch001',
+      kind: 'text',
+      text: 'I did my best',
+    }, TENANT);
+
+    expect(sendTextMessage).toHaveBeenCalledWith(startMsg.whatsappNumber, 'Remedial', undefined);
+  });
+
+  it('proceeds to nextIndex when score is above threshold', async () => {
+    const { getLatestScoreForStep } = await import('../../db/scores');
+
+    const startMsg = firstMessage(buttonFixture);
+    await handleInbound(startMsg, TENANT);
+
+    vi.mocked(getJourney).mockResolvedValue({ ...SAMPLE_JOURNEY, totalSteps: 10 });
+
+    const branchingStep = {
+      ...SAMPLE_STEP,
+      branchOnLowScore: true,
+      branchScoreThreshold: 7,
+      branchStepIndex: 5,
+    };
+    const nextStep = { ...SAMPLE_STEP, id: 'step-2', index: 1, openingMessage: 'Step 2' };
+
+    vi.mocked(getStep)
+      .mockResolvedValueOnce(branchingStep) // runStepTurn
+      .mockResolvedValueOnce(branchingStep) // advanceStep
+      .mockResolvedValueOnce(nextStep); // beginStep
+
+    vi.mocked(getLatestScoreForStep).mockResolvedValue(9);
+    vi.mocked(generate).mockResolvedValue(
+      JSON.stringify({ message: 'High score turn', intent: 'advance', shouldAdvance: true }),
+    );
+
+    await handleInbound({
+      whatsappNumber: startMsg.whatsappNumber,
+      whatsappMessageId: 'wamid.nobranch001',
+      kind: 'text',
+      text: 'I did great',
+    }, TENANT);
+
+    expect(sendTextMessage).toHaveBeenCalledWith(startMsg.whatsappNumber, 'Step 2', undefined);
   });
 });
 
