@@ -435,6 +435,53 @@ function formatScoreCard(score: NonNullable<AIResponse['score']>): string {
   return lines.join('\n');
 }
 
+async function sendScorecard(
+  session: Session,
+  journey: { title: string },
+  creds?: SenderCredentials,
+): Promise<void> {
+  const scores = await getScoresForUser(session.userId, session.currentJourneyId!).catch(() => []);
+  if (scores.length === 0) return;
+
+  // Calculate averages
+  let totalOverall = 0;
+  const dimensionTotals: Record<string, { total: number; count: number }> = {};
+
+  for (const s of scores) {
+    const row = s as any;
+    totalOverall += row.score;
+    const criteria = row.criteria as { name: string; score: number }[];
+    if (criteria && Array.isArray(criteria)) {
+      for (const d of criteria) {
+        if (!dimensionTotals[d.name]) {
+          dimensionTotals[d.name] = { total: 0, count: 0 };
+        }
+        dimensionTotals[d.name].total += d.score;
+        dimensionTotals[d.name].count += 1;
+      }
+    }
+  }
+
+  const avgOverall = (totalOverall / scores.length).toFixed(1);
+  const dimensions = Object.entries(dimensionTotals).map(([name, data]) => ({
+    name,
+    avg: (data.total / data.count).toFixed(0),
+  }));
+
+  const lastScore = scores[0] as any; // scores are ordered newest first
+  const summary = lastScore.feedback?.split('\n\nDevelopment focus:')[0] ?? '';
+
+  const lines: string[] = [`🎉 You've completed *${journey.title}*!`, ''];
+  lines.push(`Your overall score: ${avgOverall} / 10`, '');
+  lines.push('Breakdown:');
+  for (const d of dimensions) {
+    lines.push(`• ${d.name} — ${d.avg}/10`);
+  }
+  lines.push('', summary, '', 'Well done! Type "start" to begin a new programme.');
+
+  await sendTextMessage(session.whatsappNumber, lines.join('\n'), creds);
+}
+
 async function advanceStep(
   session: Session,
   tenantId: string,
@@ -459,10 +506,8 @@ async function advanceStep(
       currentSessionId: null,
       currentStepIndex: nextIndex,
     });
-    await sendTextMessage(
-      session.whatsappNumber,
-      'You have completed every step in this journey. Type MENU to start another.',
-      creds,
+    await sendScorecard(session, journey, creds).catch((err) =>
+      console.error(`[flowRouter] sendScorecard failed: ${err.message}`),
     );
     return;
   }

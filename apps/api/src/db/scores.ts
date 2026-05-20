@@ -24,13 +24,18 @@ export async function saveScore(params: {
 }
 
 /** Retrieve all scores for a given user, newest first. */
-export async function getScoresForUser(userId: string) {
+export async function getScoresForUser(userId: string, journeyId?: string) {
   const db = supabase();
-  const { data, error } = await db
+  let query = db
     .from('scores')
     .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false });
+    .eq('user_id', userId);
+
+  if (journeyId) {
+    query = query.eq('journey_id', journeyId);
+  }
+
+  const { data, error } = await query.order('created_at', { ascending: false });
   if (error) throw new Error(`Get scores failed: ${error.message}`);
   return data ?? [];
 }
