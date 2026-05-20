@@ -15,6 +15,8 @@ function rowToStep(row: JourneyStepRow): JourneyStep {
     branchOnLowScore: row.branch_on_low_score,
     branchScoreThreshold: row.branch_score_threshold,
     branchStepIndex: row.branch_step_index,
+    mediaUrl: row.media_url,
+    mediaType: row.media_type,
   };
 }
 

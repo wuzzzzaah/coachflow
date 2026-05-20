@@ -2,6 +2,7 @@ import { InboundMessage, ListSection } from '../whatsapp/types';
 import {
   sendListMessage,
   sendTextMessage,
+  sendMediaMessage,
   markAsRead,
   SenderCredentials,
 } from '../whatsapp/sender';
@@ -330,6 +331,11 @@ async function beginStep(
   });
 
   await sendTextMessage(whatsappNumber, step.openingMessage, creds);
+  if (step.mediaUrl && step.mediaType) {
+    sendMediaMessage(whatsappNumber, step.mediaType, step.mediaUrl, undefined, creds).catch(
+      (err) => console.error(`[flowRouter] sendMediaMessage failed: ${err.message}`),
+    );
+  }
   await appendTurn(whatsappNumber, { role: 'assistant', content: step.openingMessage });
   await logMessage({
     sessionId: dbSessionId,

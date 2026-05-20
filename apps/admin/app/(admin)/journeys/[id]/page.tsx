@@ -18,6 +18,8 @@ interface Step {
   branch_on_low_score: boolean;
   branch_score_threshold: number | null;
   branch_step_index: number | null;
+  media_url?: string | null;
+  media_type?: 'image' | 'document' | 'audio' | 'video' | null;
 }
 
 interface Journey {
@@ -70,7 +72,9 @@ export default function JourneyDetailsPage() {
     mode: 'coaching' as CoachingMode,
     opening_message: '',
     min_turns: 3,
-    step_guidance: ''
+    step_guidance: '',
+    media_url: '',
+    media_type: null as 'image' | 'document' | 'audio' | 'video' | null
   });
 
   // Edit Step State
@@ -180,7 +184,7 @@ export default function JourneyDetailsPage() {
       });
 
       setIsAddingStep(false);
-      setNewStep({ title: '', mode: 'coaching', opening_message: '', min_turns: 3, step_guidance: '' });
+      setNewStep({ title: '', mode: 'coaching', opening_message: '', min_turns: 3, step_guidance: '', media_url: '', media_type: null });
       loadJourney();
     } catch (err: unknown) {
       alert((err as Error).message);
@@ -546,6 +550,43 @@ export default function JourneyDetailsPage() {
                   />
                 </div>
 
+                <div className="border-t pt-4 mt-4">
+                  <h4 className="text-sm font-bold mb-3">Media Attachment</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Type</label>
+                      <select
+                        className="w-full border p-2 rounded"
+                        value={stepEditData.media_type || ''}
+                        onChange={e => setStepEditData({ ...stepEditData, media_type: (e.target.value || null) as any })}
+                      >
+                        <option value="">None</option>
+                        <option value="image">Image</option>
+                        <option value="document">Document (PDF)</option>
+                        <option value="audio">Audio</option>
+                        <option value="video">Video</option>
+                      </select>
+                    </div>
+                    {stepEditData.media_type && (
+                      <div>
+                        <label className="block text-sm font-medium mb-1">URL</label>
+                        <input
+                          type="text"
+                          className="w-full border p-2 rounded"
+                          placeholder="https://..."
+                          value={stepEditData.media_url || ''}
+                          onChange={e => setStepEditData({ ...stepEditData, media_url: e.target.value })}
+                        />
+                      </div>
+                    )}
+                  </div>
+                  {stepEditData.media_type === 'image' && stepEditData.media_url && (
+                    <div className="mt-2">
+                      <img src={stepEditData.media_url} alt="Preview" className="h-20 w-auto rounded border" />
+                    </div>
+                  )}
+                </div>
+
                 {step.scoring_criteria && step.scoring_criteria.length > 0 && (
                   <div className="border-t pt-4 mt-4">
                     <h4 className="text-sm font-bold mb-3">Branching</h4>
@@ -619,6 +660,11 @@ export default function JourneyDetailsPage() {
                   {step.step_guidance && (
                     <p className="text-gray-600 text-sm mb-2"><span className="font-semibold">Guidance:</span> {step.step_guidance}</p>
                   )}
+                {step.media_url && (
+                  <p className="text-gray-600 text-sm mb-2">
+                    <span className="font-semibold">Media:</span> {step.media_type} ({step.media_url})
+                  </p>
+                )}
                   <p className="text-gray-500 text-xs">Min turns: {step.min_turns}</p>
                 </div>
                 <div className="flex flex-col gap-2 items-end">
@@ -653,6 +699,8 @@ export default function JourneyDetailsPage() {
                           branch_on_low_score: step.branch_on_low_score,
                           branch_score_threshold: step.branch_score_threshold,
                           branch_step_index: step.branch_step_index,
+                          media_url: step.media_url,
+                          media_type: step.media_type,
                         });
                         setEditingStepId(step.id);
                       }}
@@ -735,6 +783,43 @@ export default function JourneyDetailsPage() {
                 value={newStep.min_turns}
                 onChange={e => setNewStep({ ...newStep, min_turns: parseInt(e.target.value) || 0 })}
               />
+            </div>
+
+            <div className="border-t pt-4 mt-4">
+              <h4 className="text-sm font-bold mb-3">Media Attachment</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Type</label>
+                  <select
+                    className="w-full border p-2 rounded"
+                    value={newStep.media_type || ''}
+                    onChange={e => setNewStep({ ...newStep, media_type: (e.target.value || null) as any })}
+                  >
+                    <option value="">None</option>
+                    <option value="image">Image</option>
+                    <option value="document">Document (PDF)</option>
+                    <option value="audio">Audio</option>
+                    <option value="video">Video</option>
+                  </select>
+                </div>
+                {newStep.media_type && (
+                  <div>
+                    <label className="block text-sm font-medium mb-1">URL</label>
+                    <input
+                      type="text"
+                      className="w-full border p-2 rounded"
+                      placeholder="https://..."
+                      value={newStep.media_url || ''}
+                      onChange={e => setNewStep({ ...newStep, media_url: e.target.value })}
+                    />
+                  </div>
+                )}
+              </div>
+              {newStep.media_type === 'image' && newStep.media_url && (
+                <div className="mt-2">
+                  <img src={newStep.media_url} alt="Preview" className="h-20 w-auto rounded border" />
+                </div>
+              )}
             </div>
             <div className="flex gap-2">
               <button
