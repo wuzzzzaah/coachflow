@@ -50,6 +50,10 @@ vi.mock('../../ai/geminiClient', () => ({
   generate: vi.fn(),
 }));
 
+vi.mock('../../webhooks/deliver', () => ({
+  deliverEvent: vi.fn().mockResolvedValue(undefined),
+}));
+
 // ── Imports after mocks are registered ────────────────────────────────────
 import { handleInbound } from '../flowRouter';
 import { parseWebhook } from '../../whatsapp/parser';
@@ -404,6 +408,7 @@ describe('handleInbound — step advancement', () => {
     const step2 = { ...SAMPLE_STEP, id: 'step-2', index: 1, openingMessage: 'Now step 2.' };
     vi.mocked(getStep)
       .mockResolvedValueOnce(SAMPLE_STEP) // current step lookup in runStepTurn
+      .mockResolvedValueOnce(SAMPLE_STEP) // current step lookup in advanceStep
       .mockResolvedValueOnce(step2); // next step lookup in beginStep
 
     const followMsg = {

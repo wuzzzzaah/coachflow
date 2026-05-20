@@ -16,6 +16,7 @@ import { getUserByNumber, searchUsers, getUserProgress } from './db/users';
 import { getScoresForUser } from './db/scores';
 import { getSessionMessages, getUserSessions, getSessionById } from './db/sessions';
 import { listTenants, createTenant, getTenantById, updateTenant, setTenantWhatsAppToken, getTenantWhatsAppToken, getTenantPromptOverrides, upsertTenantPrompt, deleteTenantPrompt } from './db/tenants';
+import { listWebhooks, createWebhook, deleteWebhook } from './db/webhooks';
 import { getCompletionRates, getStepFunnel, getScoreDistribution } from './db/analytics';
 import { getIdleUsers, logReminder } from './db/reminders';
 import { sendTextMessage } from './whatsapp/sender';
@@ -28,6 +29,7 @@ import {
   reorderStepsSchema,
   createTenantSchema,
   updateTenantSchema,
+  createTenantWebhookSchema,
   promptKeySchema,
 } from '@coachflow/shared';
 
@@ -93,6 +95,48 @@ app.get('/api/tenants', requireRole('super_admin'), async (req, res) => {
   try {
     const tenants = await listTenants();
     return res.json(tenants);
+  } catch (err) {
+    return res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+// Webhook management APIs
+app.get('/api/webhooks', requireRole('admin', 'super_admin'), async (req, res) => {
+  try {
+    const tenantId = (req.query.tenantId as string) ?? process.env.DEFAULT_TENANT_ID ?? '';
+    if (!tenantId) return res.status(400).json({ error: 'tenantId query param required' });
+
+    const webhooks = await listWebhooks(tenantId);
+    return res.json(webhooks);
+  } catch (err) {
+    return res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+app.post('/api/webhooks', requireRole('admin', 'super_admin'), async (req, res) => {
+  try {
+    const tenantId = (req.query.tenantId as string) ?? process.env.DEFAULT_TENANT_ID ?? '';
+    if (!tenantId) return res.status(400).json({ error: 'tenantId query param required' });
+
+    const parsed = createTenantWebhookSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'invalid input', details: parsed.error });
+    }
+
+    const webhook = await createWebhook(tenantId, parsed.data);
+    return res.status(201).json(webhook);
+  } catch (err) {
+    return res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+app.delete('/api/webhooks/:id', requireRole('admin', 'super_admin'), async (req, res) => {
+  try {
+    const tenantId = (req.query.tenantId as string) ?? process.env.DEFAULT_TENANT_ID ?? '';
+    if (!tenantId) return res.status(400).json({ error: 'tenantId query param required' });
+
+    await deleteWebhook(tenantId, req.params.id);
+    return res.status(204).send();
   } catch (err) {
     return res.status(500).json({ error: (err as Error).message });
   }

@@ -107,11 +107,22 @@ export const tenantSchema = z.object({
   created_at: z.string(),
 });
 
+export const tenantWebhookSchema = z.object({
+  id: z.string().uuid(),
+  tenant_id: z.string().uuid(),
+  url: z.string().url(),
+  secret: z.string(),
+  events: z.array(z.string()),
+  enabled: z.boolean(),
+  created_at: z.string(),
+});
+
 export type InboundMessageInput = z.infer<typeof inboundMessageSchema>;
 export type AIResponseInput = z.infer<typeof aiResponseSchema>;
 export type JourneyInput = z.infer<typeof journeySchema>;
 export type JourneyStepInput = z.infer<typeof journeyStepSchema>;
 export type TenantInput = z.infer<typeof tenantSchema>;
+export type TenantWebhookInput = z.infer<typeof tenantWebhookSchema>;
 
 export const createTenantSchema = z.object({
   name: z.string().min(1),
@@ -120,6 +131,12 @@ export const createTenantSchema = z.object({
 });
 
 export const updateTenantSchema = createTenantSchema.partial();
+
+export const createTenantWebhookSchema = z.object({
+  url: z.string().url(),
+  secret: z.string(),
+  events: z.array(z.string()),
+});
 
 export const promptKeySchema = z.enum(['system', 'coaching', 'roleplay', 'reflection', 'scoring']);
 export type PromptKey = z.infer<typeof promptKeySchema>;

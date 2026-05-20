@@ -130,6 +130,16 @@ export interface JourneyPromptRow {
   content: string;
 }
 
+export interface TenantWebhook {
+  id: string;
+  tenant_id: string;
+  url: string;
+  secret: string;
+  events: string[];
+  enabled: boolean;
+  created_at: string;
+}
+
 // ── Adapter interfaces ────────────────────────────────────────────────────────
 
 export interface ISessionStore {
