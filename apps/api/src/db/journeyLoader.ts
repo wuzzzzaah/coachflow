@@ -11,6 +11,9 @@ function rowToStep(row: JourneyStepRow): JourneyStep {
     minTurns: row.min_turns,
     stepGuidance: row.step_guidance,
     scoringCriteria: row.scoring_criteria ?? undefined,
+    branchOnLowScore: row.branch_on_low_score,
+    branchScoreThreshold: row.branch_score_threshold,
+    branchStepIndex: row.branch_step_index,
   };
 }
 

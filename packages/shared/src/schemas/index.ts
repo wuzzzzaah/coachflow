@@ -43,6 +43,9 @@ export const journeyStepSchema = z.object({
   min_turns: z.number().int().min(0),
   step_guidance: z.string(),
   scoring_criteria: z.array(z.string()).nullable(),
+  branch_on_low_score: z.boolean(),
+  branch_score_threshold: z.number().nullable(),
+  branch_step_index: z.number().int().nullable(),
   deleted_at: z.string().nullable().optional(),
 });
 
@@ -83,6 +86,9 @@ export const createJourneyStepSchema = z.object({
   min_turns: z.number().int().min(0).optional(),
   step_guidance: z.string().optional(),
   scoring_criteria: z.array(z.string()).nullable().optional(),
+  branch_on_low_score: z.boolean().optional(),
+  branch_score_threshold: z.number().nullable().optional(),
+  branch_step_index: z.number().int().nullable().optional(),
 });
 
 export const updateJourneyStepSchema = z.object({
@@ -92,6 +98,9 @@ export const updateJourneyStepSchema = z.object({
   min_turns: z.number().int().min(0).optional(),
   step_guidance: z.string().optional(),
   scoring_criteria: z.array(z.string()).nullable().optional(),
+  branch_on_low_score: z.boolean().optional(),
+  branch_score_threshold: z.number().nullable().optional(),
+  branch_step_index: z.number().int().nullable().optional(),
 });
 
 export const reorderStepsSchema = z.object({

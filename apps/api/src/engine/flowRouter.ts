@@ -24,7 +24,7 @@ import {
   getSessionMessages,
 } from '../db/sessions';
 import { ensureUserJourney, advanceUserJourney, completeUserJourney } from '../db/journeys';
-import { saveScore, getScoresForUser } from '../db/scores';
+import { saveScore, getScoresForUser, getLatestScoreForStep } from '../db/scores';
 import { listJourneys, getJourney, getStep } from '../db/journeyLoader';
 import { getTenantPromptOverrides } from '../db/tenants';
 import { deliverEvent } from '../webhooks/deliver';
@@ -505,7 +505,17 @@ async function advanceStep(
 
   await dbEndSession(session.currentSessionId, 'step advanced').catch(() => undefined);
 
-  const nextIndex = session.currentStepIndex + 1;
+  let nextIndex = session.currentStepIndex + 1;
+
+  // If the current step has branching enabled and the user's score is below threshold,
+  // route to branch_step_index instead of currentStepIndex + 1.
+  const lastScore = await getLatestScoreForStep(session.userId, session.currentJourneyId, step.id);
+  if (step.branchOnLowScore && step.branchScoreThreshold && lastScore !== null) {
+    if (lastScore < step.branchScoreThreshold && step.branchStepIndex !== null) {
+      nextIndex = step.branchStepIndex;
+    }
+  }
+
   const uj = await ensureUserJourney(session.userId, session.currentJourneyId);
 
   if (nextIndex >= journey.totalSteps) {

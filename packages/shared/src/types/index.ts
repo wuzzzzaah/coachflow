@@ -62,6 +62,9 @@ export interface JourneyStep {
   minTurns: number;
   scoringCriteria?: string[];
   stepGuidance: string;
+  branchOnLowScore: boolean;
+  branchScoreThreshold: number | null;
+  branchStepIndex: number | null;
 }
 
 export interface JourneyConfig {
@@ -120,6 +123,9 @@ export interface JourneyStepRow {
   min_turns: number;
   step_guidance: string;
   scoring_criteria: string[] | null;
+  branch_on_low_score: boolean;
+  branch_score_threshold: number | null;
+  branch_step_index: number | null;
 }
 
 export interface JourneyPromptRow {
