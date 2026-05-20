@@ -2,8 +2,8 @@
 
 import React, { useEffect, useState, useMemo } from 'react';
 import { apiFetch } from '../../../lib/api';
-import { JourneyRow } from '@coachflow/shared';
-import { ChevronDown, BarChart3, Table as TableIcon, Send, Loader2 } from 'lucide-react';
+import { JourneyRow, Cohort } from '@coachflow/shared';
+import { ChevronDown, BarChart3, Table as TableIcon, Send, Loader2, Users } from 'lucide-react';
 
 interface FunnelStep {
   step_index: number;
@@ -34,6 +34,12 @@ export default function AnalyticsPage() {
   const [selectedJourneyId, setSelectedJourneyId] = useState<string>('');
   const [dateRange, setDateRange] = useState<string>('30d');
 
+  const [cohorts, setCohorts] = useState<any[]>([]);
+  const [selectedCohortId, setSelectedCohortId] = useState<string>('');
+  const [cohortAnalytics, setCohortAnalytics] = useState<any>(null);
+  const [loadingCohorts, setLoadingCohorts] = useState(true);
+  const [loadingCohortData, setLoadingCohortData] = useState(false);
+
   const [funnelData, setFunnelData] = useState<FunnelStep[]>([]);
   const [scoreData, setScoreData] = useState<ScoreDist[]>([]);
 
@@ -62,8 +68,48 @@ export default function AnalyticsPage() {
         setLoadingJourneys(false);
       }
     }
+
+    async function fetchCohorts() {
+      try {
+        const res = await apiFetch(`/api/cohorts?tenantId=${tenantId}`);
+        if (res.ok) {
+          const data = await res.json();
+          setCohorts(data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch cohorts:', err);
+      } finally {
+        setLoadingCohorts(false);
+      }
+    }
+
     fetchJourneys();
+    fetchCohorts();
   }, [tenantId]);
+
+  // Fetch cohort analytics when selection changes
+  useEffect(() => {
+    if (!selectedCohortId) {
+      setCohortAnalytics(null);
+      return;
+    }
+
+    async function fetchCohortData() {
+      setLoadingCohortData(true);
+      try {
+        const res = await apiFetch(`/api/cohorts/${selectedCohortId}/analytics?tenantId=${tenantId}`);
+        if (res.ok) {
+          setCohortAnalytics(await res.json());
+        }
+      } catch (err) {
+        console.error('Failed to fetch cohort analytics:', err);
+      } finally {
+        setLoadingCohortData(false);
+      }
+    }
+
+    fetchCohortData();
+  }, [selectedCohortId, tenantId]);
 
   // Fetch funnel and score data when selection changes
   useEffect(() => {
@@ -282,6 +328,84 @@ export default function AnalyticsPage() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+        </section>
+
+        {/* Cohort Analytics Section */}
+        <section className="pt-8 border-t border-zinc-200">
+          <div className="flex items-center justify-between gap-4 mb-6">
+            <div className="flex items-center gap-2">
+              <Users className="w-5 h-5 text-zinc-600" />
+              <h2 className="text-lg font-semibold">By Cohort</h2>
+            </div>
+
+            <div className="relative">
+              <select
+                value={selectedCohortId}
+                onChange={(e) => setSelectedCohortId(e.target.value)}
+                disabled={loadingCohorts}
+                className="appearance-none bg-white border border-zinc-200 rounded-lg px-4 py-2 pr-10 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50"
+              >
+                <option value="">Select a cohort...</option>
+                {cohorts.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none" />
+            </div>
+          </div>
+
+          {loadingCohortData ? (
+            <div className="flex flex-col items-center justify-center py-12 bg-white rounded-xl border border-zinc-100 shadow-sm">
+              <Loader2 className="w-8 h-8 animate-spin mb-4 text-zinc-400" />
+              <p className="text-sm text-zinc-500 font-medium">Loading cohort analytics...</p>
+            </div>
+          ) : !selectedCohortId ? (
+            <div className="py-12 text-center text-zinc-500 bg-zinc-50 rounded-xl border border-dashed border-zinc-200">
+              Select a cohort to view detailed analytics.
+            </div>
+          ) : cohortAnalytics && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-white p-6 rounded-xl border border-zinc-100 shadow-sm">
+                <h3 className="text-sm font-medium text-zinc-500 uppercase tracking-wider mb-4">Completion Summary</h3>
+                <div className="flex items-end justify-between mb-2">
+                  <span className="text-3xl font-bold text-zinc-900">
+                    {cohortAnalytics.completionRate.completedMembers} / {cohortAnalytics.completionRate.totalMembers}
+                  </span>
+                  <span className="text-sm font-medium text-zinc-500">completed</span>
+                </div>
+                <div className="w-full bg-zinc-50 rounded-full h-2 overflow-hidden mb-2">
+                  <div
+                    className="bg-green-500 h-full transition-all duration-500"
+                    style={{ width: `${cohortAnalytics.completionRate.completionRate}%` }}
+                  />
+                </div>
+                <p className="text-sm text-zinc-500">{cohortAnalytics.completionRate.completionRate}% completion rate</p>
+              </div>
+
+              <div className="bg-white p-6 rounded-xl border border-zinc-100 shadow-sm">
+                <h3 className="text-sm font-medium text-zinc-500 uppercase tracking-wider mb-6">Score Distribution</h3>
+                <div className="flex items-end space-x-2 h-24">
+                  {cohortAnalytics.scoreDistribution.map((item: any) => {
+                    const maxCount = Math.max(...cohortAnalytics.scoreDistribution.map((i: any) => i.count));
+                    const height = maxCount > 0 ? (item.count / maxCount) * 100 : 0;
+                    return (
+                      <div key={item.range} className="flex-1 flex flex-col items-center">
+                        <div className="w-full bg-zinc-100 rounded-t-sm h-full relative flex items-end">
+                          <div
+                            className="w-full bg-zinc-900 rounded-t-sm transition-all duration-500"
+                            style={{ height: `${height}%` }}
+                          />
+                        </div>
+                        <span className="text-[10px] text-zinc-400 mt-2">{item.range}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           )}
         </section>
