@@ -19,6 +19,7 @@ export default async function AdminLayout({
 
   const navItems = [
     { name: 'Journeys', href: '/journeys' },
+    { name: 'Cohorts', href: '/cohorts' },
     { name: 'Users', href: '/users' },
     { name: 'Analytics', href: '/analytics' },
     { name: 'Prompts', href: '/prompts' },

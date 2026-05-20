@@ -140,3 +140,23 @@ export const createTenantWebhookSchema = z.object({
 
 export const promptKeySchema = z.enum(['system', 'coaching', 'roleplay', 'reflection', 'scoring']);
 export type PromptKey = z.infer<typeof promptKeySchema>;
+
+export const cohortSchema = z.object({
+  id: z.string().uuid(),
+  tenant_id: z.string().uuid(),
+  name: z.string().min(1),
+  journey_id: z.string(),
+  starts_at: z.string().nullable().optional(),
+  ends_at: z.string().nullable().optional(),
+  created_at: z.string(),
+  deleted_at: z.string().nullable().optional(),
+});
+
+export const cohortMemberSchema = z.object({
+  cohort_id: z.string().uuid(),
+  user_id: z.string().uuid(),
+  enrolled_at: z.string(),
+});
+
+export type Cohort = z.infer<typeof cohortSchema>;
+export type CohortMember = z.infer<typeof cohortMemberSchema>;
