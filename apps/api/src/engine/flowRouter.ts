@@ -27,6 +27,7 @@ import { ensureUserJourney, advanceUserJourney, completeUserJourney } from '../d
 import { saveScore, getScoresForUser } from '../db/scores';
 import { listJourneys, getJourney, getStep } from '../db/journeyLoader';
 import { getTenantPromptOverrides } from '../db/tenants';
+import { deliverEvent } from '../webhooks/deliver';
 import { AIResponse, JourneyStep, Session } from '@coachflow/shared';
 
 const KEYWORDS = {
@@ -70,6 +71,14 @@ export async function handleInbound(
   }
 
   const { user, created } = await upsertUser(msg.whatsappNumber, msg.displayName);
+  if (created) {
+    deliverEvent(tenantId, 'first_message', {
+      userId: user.id,
+      tenantId,
+      whatsappNumber: msg.whatsappNumber,
+    });
+  }
+
   let session = await getSession(msg.whatsappNumber);
 
   if (!session) {
@@ -491,6 +500,9 @@ async function advanceStep(
   const journey = await getJourney(tenantId, session.currentJourneyId);
   if (!journey) return;
 
+  const step = await getStep(tenantId, session.currentJourneyId, session.currentStepIndex);
+  if (!step) return;
+
   await dbEndSession(session.currentSessionId, 'step advanced').catch(() => undefined);
 
   const nextIndex = session.currentStepIndex + 1;
@@ -501,6 +513,11 @@ async function advanceStep(
     await updateUserProgress(session.userId, session.currentJourneyId, nextIndex).catch(
       () => undefined,
     );
+    deliverEvent(tenantId, 'journey_completed', {
+      userId: session.userId,
+      tenantId,
+      journeyId: session.currentJourneyId,
+    });
     await updateSession(session.whatsappNumber, {
       currentMode: 'journey_complete',
       currentSessionId: null,
@@ -516,6 +533,12 @@ async function advanceStep(
   await updateUserProgress(session.userId, session.currentJourneyId, nextIndex).catch(
     () => undefined,
   );
+  deliverEvent(tenantId, 'step_completed', {
+    userId: session.userId,
+    tenantId,
+    journeyId: session.currentJourneyId,
+    stepId: step.id,
+  });
   await updateSession(session.whatsappNumber, {
     currentStepIndex: nextIndex,
     currentMode: 'step_complete',
