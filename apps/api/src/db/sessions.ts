@@ -79,3 +79,69 @@ export async function getLatestActiveSession(userId: string) {
   if (error) throw new Error(`Get latest active session failed: ${error.message}`);
   return data;
 }
+
+export async function getSessionById(tenantId: string, sessionId: string) {
+  const db = supabase();
+  const { data: session, error } = await db
+    .from('sessions')
+    .select('id, journey_id, step_id, mode, started_at, ended_at, message_count')
+    .eq('tenant_id', tenantId)
+    .eq('id', sessionId)
+    .maybeSingle();
+
+  if (error) throw new Error(`Get session failed: ${error.message}`);
+  if (!session) return null;
+
+  const [{ data: journeys }, { data: steps }] = await Promise.all([
+    db.from('journeys').select('id, title').eq('id', session.journey_id).eq('tenant_id', tenantId).maybeSingle(),
+    db.from('journey_steps').select('id, title').eq('id', session.step_id).eq('tenant_id', tenantId).maybeSingle(),
+  ]);
+
+  return {
+    id: session.id,
+    journey_id: session.journey_id,
+    journey_title: (journeys as any)?.title || 'Unknown Journey',
+    step_id: session.step_id,
+    step_title: (steps as any)?.title || 'Unknown Step',
+    mode: session.mode,
+    started_at: session.started_at,
+    ended_at: session.ended_at,
+    message_count: session.message_count,
+  };
+}
+
+export async function getUserSessions(tenantId: string, userId: string) {
+  const db = supabase();
+  const { data: sessions, error: sessionsError } = await db
+    .from('sessions')
+    .select('id, journey_id, step_id, mode, started_at, ended_at, message_count')
+    .eq('tenant_id', tenantId)
+    .eq('user_id', userId)
+    .order('started_at', { ascending: false });
+
+  if (sessionsError) throw new Error(`Get user sessions failed: ${sessionsError.message}`);
+  if (!sessions || sessions.length === 0) return [];
+
+  const journeyIds = Array.from(new Set(sessions.map(s => s.journey_id).filter(Boolean))) as string[];
+  const stepIds = Array.from(new Set(sessions.map(s => s.step_id).filter(Boolean))) as string[];
+
+  const [{ data: journeys }, { data: steps }] = await Promise.all([
+    db.from('journeys').select('id, title').in('id', journeyIds).eq('tenant_id', tenantId),
+    db.from('journey_steps').select('id, title').in('id', stepIds).eq('tenant_id', tenantId),
+  ]);
+
+  const journeyMap = new Map(journeys?.map(j => [j.id, j.title]));
+  const stepMap = new Map(steps?.map(s => [s.id, s.title]));
+
+  return sessions.map(s => ({
+    id: s.id,
+    journey_id: s.journey_id,
+    journey_title: journeyMap.get(s.journey_id!) || 'Unknown Journey',
+    step_id: s.step_id,
+    step_title: stepMap.get(s.step_id!) || 'Unknown Step',
+    mode: s.mode,
+    started_at: s.started_at,
+    ended_at: s.ended_at,
+    message_count: s.message_count,
+  }));
+}
