@@ -21,6 +21,9 @@ const sampleJourney: JourneyRow = {
   version: 1,
   status: 'published',
   is_template: false,
+  schedule_type: 'manual',
+  schedule_hour: null,
+  schedule_day: null,
   created_at: new Date().toISOString(),
 };
 
@@ -35,6 +38,9 @@ const sampleStep: JourneyStepRow = {
   min_turns: 3,
   step_guidance: 'Guide the user.',
   scoring_criteria: null,
+  branch_on_low_score: false,
+  branch_score_threshold: null,
+  branch_step_index: null,
 };
 
 function makeChain(data: unknown, error: unknown = null) {
