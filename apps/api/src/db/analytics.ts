@@ -31,7 +31,7 @@ export async function getCompletionRates(tenantId: string) {
   };
 }
 
-export async function getStepFunnel(tenantId: string, journeyId: string) {
+export async function getStepFunnel(tenantId: string, journeyId: string, since?: string) {
   const db = supabase();
 
   // Get all steps for the journey
@@ -45,11 +45,17 @@ export async function getStepFunnel(tenantId: string, journeyId: string) {
   if (stepsErr) throw new Error(`Failed to fetch steps: ${stepsErr.message}`);
 
   // Get all sessions for this journey
-  const { data: sessions, error: sessionsErr } = await db
+  let query = db
     .from('sessions')
     .select('user_id, step_id, ended_at')
     .eq('tenant_id', tenantId)
     .eq('journey_id', journeyId);
+
+  if (since) {
+    query = query.gte('started_at', since);
+  }
+
+  const { data: sessions, error: sessionsErr } = await query;
 
   if (sessionsErr) throw new Error(`Failed to fetch sessions: ${sessionsErr.message}`);
 
@@ -75,17 +81,27 @@ export async function getStepFunnel(tenantId: string, journeyId: string) {
   return funnel;
 }
 
-export async function getScoreDistribution(tenantId: string) {
+export async function getScoreDistribution(tenantId: string, journeyId?: string, since?: string) {
   const db = supabase();
 
-  const { data: scores, error: scoresErr } = await db
+  let query = db
     .from('scores')
-    .select('criteria')
+    .select('criteria, created_at')
     .eq('tenant_id', tenantId);
+
+  if (journeyId) {
+    query = query.eq('journey_id', journeyId);
+  }
+
+  if (since) {
+    query = query.gte('created_at', since);
+  }
+
+  const { data: scores, error: scoresErr } = await query;
 
   if (scoresErr) throw new Error(`Failed to fetch scores: ${scoresErr.message}`);
 
-  const distribution = new Map<string, { sum: number; count: number; min: number; max: number }>();
+  const distribution = new Map<string, number[]>();
 
   for (const row of scores) {
     if (row.criteria && Array.isArray(row.criteria)) {
@@ -93,25 +109,44 @@ export async function getScoreDistribution(tenantId: string) {
         if (criteria && typeof criteria.name === 'string' && typeof criteria.score === 'number') {
           const { name, score } = criteria;
           if (!distribution.has(name)) {
-            distribution.set(name, { sum: 0, count: 0, min: score, max: score });
+            distribution.set(name, []);
           }
-          const stats = distribution.get(name)!;
-          stats.sum += score;
-          stats.count += 1;
-          if (score < stats.min) stats.min = score;
-          if (score > stats.max) stats.max = score;
+          distribution.get(name)!.push(score);
         }
       }
     }
   }
 
-  const result = Array.from(distribution.entries()).map(([dimension, stats]) => ({
-    dimension,
-    avg_score: stats.count > 0 ? Number((stats.sum / stats.count).toFixed(2)) : 0,
-    min_score: stats.min,
-    max_score: stats.max,
-    count: stats.count,
-  }));
+  const calculatePercentile = (values: number[], percentile: number) => {
+    if (values.length === 0) return 0;
+    const sorted = [...values].sort((a, b) => a - b);
+    const index = (percentile / 100) * (sorted.length - 1);
+    const lower = Math.floor(index);
+    const upper = Math.ceil(index);
+    const weight = index - lower;
+    if (upper >= sorted.length) return sorted[lower];
+    return sorted[lower] * (1 - weight) + sorted[upper] * weight;
+  };
+
+  const result = Array.from(distribution.entries()).map(([dimension, values]) => {
+    const sum = values.reduce((a, b) => a + b, 0);
+    const count = values.length;
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const avg = count > 0 ? Number((sum / count).toFixed(2)) : 0;
+    const p25 = calculatePercentile(values, 25);
+    const p75 = calculatePercentile(values, 75);
+
+    return {
+      dimension,
+      avg_score: avg,
+      min_score: min,
+      max_score: max,
+      p25_score: Number(p25.toFixed(2)),
+      p75_score: Number(p75.toFixed(2)),
+      count: count,
+    };
+  });
 
   // Sort alphabetically by dimension name for consistency
   return result.sort((a, b) => a.dimension.localeCompare(b.dimension));

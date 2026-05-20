@@ -340,9 +340,11 @@ app.get('/api/analytics/funnel', requireRole('admin', 'super_admin'), async (req
   try {
     const tenantId = (req.query.tenantId as string) ?? process.env.DEFAULT_TENANT_ID ?? '';
     const journeyId = req.query.journeyId as string;
+    const since = req.query.since as string | undefined;
+
     if (!tenantId) return res.status(400).json({ error: 'tenantId query param required' });
     if (!journeyId) return res.status(400).json({ error: 'journeyId query param required' });
-    const funnel = await getStepFunnel(tenantId, journeyId);
+    const funnel = await getStepFunnel(tenantId, journeyId, since);
     return res.json(funnel);
   } catch (err) {
     return res.status(500).json({ error: (err as Error).message });
@@ -352,8 +354,11 @@ app.get('/api/analytics/funnel', requireRole('admin', 'super_admin'), async (req
 app.get('/api/analytics/scores', requireRole('admin', 'super_admin'), async (req, res) => {
   try {
     const tenantId = (req.query.tenantId as string) ?? process.env.DEFAULT_TENANT_ID ?? '';
+    const journeyId = req.query.journeyId as string | undefined;
+    const since = req.query.since as string | undefined;
+
     if (!tenantId) return res.status(400).json({ error: 'tenantId query param required' });
-    const scores = await getScoreDistribution(tenantId);
+    const scores = await getScoreDistribution(tenantId, journeyId, since);
     return res.json(scores);
   } catch (err) {
     return res.status(500).json({ error: (err as Error).message });
