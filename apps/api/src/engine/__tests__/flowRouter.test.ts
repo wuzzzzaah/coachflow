@@ -19,6 +19,8 @@ vi.mock('../../db/sessions', () => ({
   startSession: vi.fn().mockResolvedValue('db-session-1'),
   endSession: vi.fn().mockResolvedValue(undefined),
   logMessage: vi.fn().mockResolvedValue(undefined),
+  getLatestActiveSession: vi.fn().mockResolvedValue(null),
+  getSessionMessages: vi.fn().mockResolvedValue([]),
 }));
 
 vi.mock('../../db/journeys', () => ({
@@ -56,6 +58,7 @@ import { InMemorySessionStore } from '../inMemorySessionStore';
 import { sendTextMessage, sendListMessage } from '../../whatsapp/sender';
 import { claimMessage, upsertUser } from '../../db/users';
 import { listJourneys, getJourney, getStep } from '../../db/journeyLoader';
+import { getLatestActiveSession, getSessionMessages } from '../../db/sessions';
 import { generate } from '../../ai/geminiClient';
 
 import type { MetaWebhookPayload } from '../../whatsapp/types';
@@ -127,7 +130,7 @@ function firstMessage(fixture: MetaWebhookPayload) {
 // ── Tests ──────────────────────────────────────────────────────────────────
 
 describe('handleInbound — first message triggers onboarding', () => {
-  it('sends welcome list after onboarding exchange', async () => {
+  it('sends welcome list for a brand-new user', async () => {
     vi.mocked(upsertUser).mockResolvedValue({
       user: makeUser({ onboarded_at: null }),
       created: true,
@@ -135,6 +138,125 @@ describe('handleInbound — first message triggers onboarding', () => {
     const msg = firstMessage(textFixture);
     await handleInbound(msg, TENANT);
     expect(sendListMessage).toHaveBeenCalledOnce();
+    expect(sendListMessage).toHaveBeenCalledWith(
+      msg.whatsappNumber,
+      expect.stringContaining('Welcome'),
+      'Pick a journey',
+      expect.any(Array),
+      undefined,
+    );
+  });
+});
+
+describe('handleInbound — idle state handling', () => {
+  it('sends journey list when an idle user sends a random message', async () => {
+    vi.mocked(upsertUser).mockResolvedValue({
+      user: makeUser({ current_journey_id: null }),
+      created: false,
+    });
+    const msg = {
+      whatsappNumber: '14155550001',
+      whatsappMessageId: 'wamid.idle001',
+      kind: 'text' as const,
+      text: 'What can you do?',
+    };
+    await handleInbound(msg, TENANT);
+    expect(sendListMessage).toHaveBeenCalledOnce();
+  });
+
+  it('sends journey list when an idle user sends "start"', async () => {
+    vi.mocked(upsertUser).mockResolvedValue({
+      user: makeUser({ current_journey_id: null }),
+      created: false,
+    });
+    const msg = {
+      whatsappNumber: '14155550001',
+      whatsappMessageId: 'wamid.start001',
+      kind: 'text' as const,
+      text: 'START',
+    };
+    await handleInbound(msg, TENANT);
+    expect(sendListMessage).toHaveBeenCalledOnce();
+  });
+
+  it('sends fallback message when no journeys are available', async () => {
+    vi.mocked(listJourneys).mockResolvedValue([]);
+    const msg = {
+      whatsappNumber: '14155550001',
+      whatsappMessageId: 'wamid.none001',
+      kind: 'text' as const,
+      text: 'hi',
+    };
+    await handleInbound(msg, TENANT);
+    expect(sendTextMessage).toHaveBeenCalledWith(
+      msg.whatsappNumber,
+      'No programmes are available yet. Please check back soon.',
+      undefined,
+    );
+  });
+});
+
+describe('handleInbound — session restoration', () => {
+  it('allows switching journey via list message even if mid-coaching', async () => {
+    const user = makeUser({ current_journey_id: 'journey-1', current_step_index: 0 });
+    vi.mocked(upsertUser).mockResolvedValue({ user, created: false });
+    // Mock an active session
+    vi.mocked(getLatestActiveSession).mockResolvedValue({
+      id: 'db-sess-1',
+      journey_id: 'journey-1',
+      mode: 'coaching',
+      ended_at: null,
+    } as any);
+
+    const msg = {
+      whatsappNumber: user.whatsapp_number,
+      whatsappMessageId: 'wamid.switch001',
+      kind: 'list' as const,
+      replyId: 'maritime-leadership-001',
+      text: 'Switching',
+    };
+
+    await handleInbound(msg, TENANT);
+
+    // Should call getJourney for the NEW journey
+    expect(getJourney).toHaveBeenCalledWith(TENANT, 'maritime-leadership-001');
+    // Should NOT call generate (which would happen if it continued coaching)
+    expect(generate).not.toHaveBeenCalled();
+    // Should send the "Starting ..." message
+    expect(sendTextMessage).toHaveBeenCalledWith(
+      user.whatsapp_number,
+      expect.stringContaining('Starting'),
+      undefined,
+    );
+  });
+
+  it('resumes a mid-journey user when Redis session is missing', async () => {
+    const user = makeUser({ current_journey_id: 'journey-1', current_step_index: 0 });
+    vi.mocked(upsertUser).mockResolvedValue({ user, created: false });
+    vi.mocked(getLatestActiveSession).mockResolvedValue({
+      id: 'db-sess-restored',
+      journey_id: 'journey-1',
+      mode: 'coaching',
+      ended_at: null,
+    } as any);
+    vi.mocked(getSessionMessages).mockResolvedValue([
+      { role: 'assistant', content: 'Hello!' },
+      { role: 'user', content: 'Hi there' },
+    ] as any);
+
+    const msg = {
+      whatsappNumber: user.whatsapp_number,
+      whatsappMessageId: 'wamid.resume001',
+      kind: 'text' as const,
+      text: 'Continued thought',
+    };
+
+    await handleInbound(msg, TENANT);
+
+    // Should have called generate for the coaching turn
+    expect(generate).toHaveBeenCalled();
+    // And should NOT have sent the welcome message
+    expect(sendListMessage).not.toHaveBeenCalled();
   });
 });
 

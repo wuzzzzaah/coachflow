@@ -64,3 +64,18 @@ export async function getSessionMessages(sessionId: string) {
   if (error) throw new Error(`Get session messages failed: ${error.message}`);
   return data ?? [];
 }
+
+/** Find the most recent un-ended session for a user. */
+export async function getLatestActiveSession(userId: string) {
+  const db = supabase();
+  const { data, error } = await db
+    .from('sessions')
+    .select('*')
+    .eq('user_id', userId)
+    .is('ended_at', null)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error(`Get latest active session failed: ${error.message}`);
+  return data;
+}
