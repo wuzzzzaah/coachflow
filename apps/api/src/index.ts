@@ -21,6 +21,8 @@ import { listWebhooks, createWebhook, deleteWebhook } from './db/webhooks';
 import { getCompletionRates, getStepFunnel, getScoreDistribution } from './db/analytics';
 import { getIdleUsers, logReminder } from './db/reminders';
 import { writeAuditLog, getAuditLog } from './db/auditLog';
+import { getNotificationConfig, upsertNotificationConfig } from './db/notifications';
+import { notifyIdleUser } from './notifications/notify';
 import {
   listCohorts,
   getCohort,
@@ -42,6 +44,7 @@ import {
   updateTenantSchema,
   createTenantWebhookSchema,
   promptKeySchema,
+  notificationConfigSchema,
 } from '@coachflow/shared';
 
 // Session store — InMemorySessionStore is the default. Swap to RedisSessionStore in
@@ -106,6 +109,33 @@ app.get('/api/tenants', requireRole('super_admin'), async (req, res) => {
   try {
     const tenants = await listTenants();
     return res.json(tenants);
+  } catch (err) {
+    return res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+// Notification Config APIs
+app.get('/api/notifications/config', requireRole('admin'), async (req, res) => {
+  try {
+    const tenantId = (req.query.tenantId as string) ?? process.env.DEFAULT_TENANT_ID ?? '';
+    if (!tenantId) return res.status(400).json({ error: 'tenantId query param required' });
+
+    const config = await getNotificationConfig(tenantId);
+    return res.json(config);
+  } catch (err) {
+    return res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+app.put('/api/notifications/config', requireRole('admin'), async (req, res) => {
+  try {
+    const parsed = notificationConfigSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'invalid input', details: parsed.error });
+    }
+
+    const config = await upsertNotificationConfig(parsed.data.tenant_id, parsed.data);
+    return res.json(config);
   } catch (err) {
     return res.status(500).json({ error: (err as Error).message });
   }
@@ -385,6 +415,9 @@ app.post('/api/reminders/send', requireRole('admin', 'super_admin'), async (req,
         const message = `👋 Hey! You're in the middle of ${user.journey_title}. Ready to continue? Just reply here to pick up where you left off.`;
         await sendTextMessage(user.whatsapp_number, message, creds);
         await logReminder(tenantId, user.id);
+        notifyIdleUser(tenantId, user.id, user.whatsapp_number).catch((err) =>
+          console.error(`[index] notifyIdleUser failed for ${user.id}: ${err.message}`),
+        );
         sent++;
       } catch (err) {
         console.error(`Failed to send reminder to user ${user.id}:`, err);

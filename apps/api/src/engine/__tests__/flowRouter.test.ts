@@ -55,6 +55,12 @@ vi.mock('../../webhooks/deliver', () => ({
   deliverEvent: vi.fn().mockResolvedValue(undefined),
 }));
 
+vi.mock('../../notifications/notify', () => ({
+  notifyJourneyComplete: vi.fn().mockResolvedValue(undefined),
+  notifyLowScore: vi.fn().mockResolvedValue(undefined),
+  notifyIdleUser: vi.fn().mockResolvedValue(undefined),
+}));
+
 // ── Imports after mocks are registered ────────────────────────────────────
 import { handleInbound } from '../flowRouter';
 import { parseWebhook } from '../../whatsapp/parser';
