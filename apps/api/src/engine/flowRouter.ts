@@ -20,6 +20,8 @@ import {
   startSession as dbStartSession,
   endSession as dbEndSession,
   logMessage,
+  getLatestActiveSession,
+  getSessionMessages,
 } from '../db/sessions';
 import { ensureUserJourney, advanceUserJourney, completeUserJourney } from '../db/journeys';
 import { saveScore, getScoresForUser } from '../db/scores';
@@ -69,13 +71,19 @@ export async function handleInbound(
 
   const { user, created } = await upsertUser(msg.whatsappNumber, msg.displayName);
   let session = await getSession(msg.whatsappNumber);
+
   if (!session) {
-    session = await createSession({
-      tenantId,
-      userId: user.id,
-      whatsappNumber: msg.whatsappNumber,
-      initialMode: created || !user.onboarded_at ? 'onboarding' : 'menu',
-    });
+    if (!created && user.current_journey_id) {
+      session = await attemptResume(user, tenantId).catch(() => undefined);
+    }
+    if (!session) {
+      session = await createSession({
+        tenantId,
+        userId: user.id,
+        whatsappNumber: msg.whatsappNumber,
+        initialMode: created || !user.onboarded_at ? 'onboarding' : 'menu',
+      });
+    }
   }
 
   if (msg.kind === 'unsupported') {
@@ -97,6 +105,14 @@ export async function handleInbound(
 
   const inputText = (msg.text ?? '').trim();
   if (!inputText) return;
+
+  // Handle journey selection from a WhatsApp list message.
+  if (msg.kind === 'list' && msg.replyId) {
+    if (await getJourney(tenantId, msg.replyId)) {
+      await startJourney(session, msg.replyId, tenantId, senderCreds);
+      return;
+    }
+  }
 
   if (await handleKeyword(session, inputText, tenantId, senderCreds)) return;
 
@@ -198,6 +214,14 @@ async function sendWelcome(
   creds?: SenderCredentials,
 ): Promise<void> {
   const journeys = await listJourneys(tenantId);
+  if (journeys.length === 0) {
+    await sendTextMessage(
+      session.whatsappNumber,
+      'No programmes are available yet. Please check back soon.',
+      creds,
+    );
+    return;
+  }
   const sections: ListSection[] = [
     {
       title: 'Available Journeys',
@@ -477,6 +501,32 @@ async function sendProgress(
     lines.push(`${journey?.title ?? r.journey_id} — ${r.score}/10 (${date})`);
   }
   await sendTextMessage(session.whatsappNumber, lines.join('\n'), creds);
+}
+
+/** Attempt to restore a session from the database for a returning user. */
+async function attemptResume(user: any, tenantId: string): Promise<Session | undefined> {
+  const latest = await getLatestActiveSession(user.id);
+  if (!latest) return undefined;
+
+  const history = await getSessionMessages(latest.id);
+
+  return createSession({
+    tenantId,
+    userId: user.id,
+    whatsappNumber: user.whatsapp_number,
+    initialMode: latest.mode as any,
+  }).then(async (s) => {
+    return updateSession(s.whatsappNumber, {
+      currentJourneyId: latest.journey_id,
+      currentStepIndex: user.current_step_index,
+      currentSessionId: latest.id,
+      conversationHistory: history.map((m: any) => ({
+        role: m.role,
+        content: m.content,
+      })),
+      turnCount: history.filter((m: any) => m.role === 'user').length,
+    });
+  });
 }
 
 export { JourneyStep };
