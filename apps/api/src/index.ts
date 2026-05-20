@@ -19,6 +19,15 @@ import { listTenants, createTenant, getTenantById, updateTenant, setTenantWhatsA
 import { listWebhooks, createWebhook, deleteWebhook } from './db/webhooks';
 import { getCompletionRates, getStepFunnel, getScoreDistribution } from './db/analytics';
 import { getIdleUsers, logReminder } from './db/reminders';
+import {
+  listCohorts,
+  getCohort,
+  createCohort,
+  deleteCohort,
+  addCohortMembers,
+  removeCohortMember,
+  getCohortProgress,
+} from './db/cohorts';
 import { sendTextMessage } from './whatsapp/sender';
 import { requireAuth, requireRole } from './middleware/auth';
 import {
@@ -136,6 +145,91 @@ app.delete('/api/webhooks/:id', requireRole('admin', 'super_admin'), async (req,
     if (!tenantId) return res.status(400).json({ error: 'tenantId query param required' });
 
     await deleteWebhook(tenantId, req.params.id);
+    return res.status(204).send();
+  } catch (err) {
+    return res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+// Cohort management APIs
+app.get('/api/cohorts', requireRole('admin'), async (req, res) => {
+  try {
+    const tenantId = (req.query.tenantId as string) ?? process.env.DEFAULT_TENANT_ID ?? '';
+    if (!tenantId) return res.status(400).json({ error: 'tenantId query param required' });
+
+    const cohorts = await listCohorts(tenantId);
+    return res.json(cohorts);
+  } catch (err) {
+    return res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+app.get('/api/cohorts/:id', requireRole('admin'), async (req, res) => {
+  try {
+    const tenantId = (req.query.tenantId as string) ?? process.env.DEFAULT_TENANT_ID ?? '';
+    if (!tenantId) return res.status(400).json({ error: 'tenantId query param required' });
+
+    const cohort = await getCohort(req.params.id, tenantId);
+    if (!cohort) return res.status(404).json({ error: 'not_found' });
+    return res.json(cohort);
+  } catch (err) {
+    return res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+app.post('/api/cohorts', requireRole('admin'), async (req, res) => {
+  try {
+    const { tenantId, name, journeyId, startsAt, endsAt } = req.body;
+    if (!tenantId || !name || !journeyId) {
+      return res.status(400).json({ error: 'tenantId, name, and journeyId are required' });
+    }
+    const cohort = await createCohort(tenantId, name, journeyId, startsAt, endsAt);
+    return res.status(201).json(cohort);
+  } catch (err) {
+    return res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+app.delete('/api/cohorts/:id', requireRole('admin'), async (req, res) => {
+  try {
+    const tenantId = (req.query.tenantId as string) ?? process.env.DEFAULT_TENANT_ID ?? '';
+    if (!tenantId) return res.status(400).json({ error: 'tenantId query param required' });
+
+    await deleteCohort(req.params.id, tenantId);
+    return res.status(204).send();
+  } catch (err) {
+    return res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+app.get('/api/cohorts/:id/members', requireRole('admin'), async (req, res) => {
+  try {
+    const tenantId = (req.query.tenantId as string) ?? process.env.DEFAULT_TENANT_ID ?? '';
+    if (!tenantId) return res.status(400).json({ error: 'tenantId query param required' });
+
+    const progress = await getCohortProgress(req.params.id, tenantId);
+    return res.json(progress);
+  } catch (err) {
+    return res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+app.post('/api/cohorts/:id/members', requireRole('admin'), async (req, res) => {
+  try {
+    const { userIds } = req.body;
+    if (!userIds || !Array.isArray(userIds)) {
+      return res.status(400).json({ error: 'userIds array required' });
+    }
+    await addCohortMembers(req.params.id, userIds);
+    return res.status(204).send();
+  } catch (err) {
+    return res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+app.delete('/api/cohorts/:id/members/:userId', requireRole('admin'), async (req, res) => {
+  try {
+    await removeCohortMember(req.params.id, req.params.userId);
     return res.status(204).send();
   } catch (err) {
     return res.status(500).json({ error: (err as Error).message });
