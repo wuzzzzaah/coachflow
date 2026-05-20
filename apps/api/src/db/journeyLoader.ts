@@ -23,6 +23,7 @@ function rowsToConfig(journey: JourneyRow, steps: JourneyStepRow[]): JourneyConf
     totalSteps: sorted.length,
     estimatedDuration: `${journey.estimated_minutes} minutes`,
     status: journey.status,
+    is_template: journey.is_template,
     steps: sorted.map(rowToStep),
   };
 }
@@ -108,7 +109,7 @@ export async function createJourney(
 export async function updateJourney(
   tenantId: string,
   journeyId: string,
-  journeyData: { title?: string; description?: string; estimated_minutes?: number; status?: 'draft' | 'published' }
+  journeyData: { title?: string; description?: string; estimated_minutes?: number; status?: 'draft' | 'published'; is_template?: boolean }
 ): Promise<void> {
   const db = supabase();
   const updates: Record<string, unknown> = {};
@@ -116,6 +117,7 @@ export async function updateJourney(
   if (journeyData.description !== undefined) updates.description = journeyData.description;
   if (journeyData.estimated_minutes !== undefined) updates.estimated_minutes = journeyData.estimated_minutes;
   if (journeyData.status !== undefined) updates.status = journeyData.status;
+  if (journeyData.is_template !== undefined) updates.is_template = journeyData.is_template;
 
   if (Object.keys(updates).length === 0) return;
 

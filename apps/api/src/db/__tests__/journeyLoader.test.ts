@@ -20,6 +20,7 @@ const sampleJourney: JourneyRow = {
   estimated_minutes: 45,
   version: 1,
   status: 'published',
+  is_template: false,
   created_at: new Date().toISOString(),
 };
 
