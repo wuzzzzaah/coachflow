@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { apiFetch } from '../../../lib/api';
 import { JourneyRow } from '@coachflow/shared';
-import { ChevronDown, BarChart3, Table as TableIcon } from 'lucide-react';
+import { ChevronDown, BarChart3, Table as TableIcon, Send, Loader2 } from 'lucide-react';
 
 interface FunnelStep {
   step_index: number;
@@ -39,6 +39,8 @@ export default function AnalyticsPage() {
 
   const [loadingJourneys, setLoadingJourneys] = useState(true);
   const [loadingData, setLoadingData] = useState(false);
+  const [sendingReminders, setSendingReminders] = useState(false);
+  const [reminderResult, setReminderResult] = useState<{ sent: number; skipped: number } | null>(null);
 
   const tenantId = process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID || '';
 
@@ -100,12 +102,58 @@ export default function AnalyticsPage() {
     return funnelData[0].users_reached; // Step 1 is the baseline
   }, [funnelData]);
 
+  const handleSendReminders = async () => {
+    if (!confirm('Are you sure you want to send re-engagement reminders to all idle users?')) return;
+
+    setSendingReminders(true);
+    setReminderResult(null);
+    try {
+      const res = await apiFetch(`/api/reminders/send?tenantId=${tenantId}`, {
+        method: 'POST',
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setReminderResult(data);
+        setTimeout(() => setReminderResult(null), 5000);
+      } else {
+        const err = await res.json();
+        alert(`Failed to send reminders: ${err.error || res.statusText}`);
+      }
+    } catch (err) {
+      console.error('Failed to send reminders:', err);
+      alert('An unexpected error occurred while sending reminders.');
+    } finally {
+      setSendingReminders(false);
+    }
+  };
+
   return (
     <div className="p-8 max-w-6xl mx-auto">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-        <h1 className="text-2xl font-bold">Analytics</h1>
+        <div>
+          <h1 className="text-2xl font-bold">Analytics</h1>
+          {reminderResult && (
+            <p className="text-sm text-green-600 mt-1 animate-pulse">
+              Successfully sent {reminderResult.sent} reminders ({reminderResult.skipped} skipped).
+            </p>
+          )}
+        </div>
 
         <div className="flex items-center gap-3">
+          {/* Send Reminders Button */}
+          <button
+            onClick={handleSendReminders}
+            disabled={sendingReminders}
+            className="flex items-center gap-2 bg-zinc-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-zinc-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {sendingReminders ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Send className="w-4 h-4" />
+            )}
+            Send Reminders
+          </button>
+
           {/* Journey Selector */}
           <div className="relative">
             <select
