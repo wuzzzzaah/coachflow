@@ -1,0 +1,666 @@
+# CoachFlow
+
+> Multi-tenant WhatsApp coaching platform
+
+## apps/admin/app/(admin)/SignOutButton.tsx
+<a id="apps-admin-app-admin-signoutbutton-tsx"></a>
+
+### Functions
+
+#### `SignOutButton()`
+
+## apps/admin/app/(admin)/analytics/page.tsx
+<a id="apps-admin-app-admin-analytics-page-tsx"></a>
+
+### Functions
+
+#### `AnalyticsPage()`
+
+## apps/admin/app/(admin)/journeys/[id]/page.tsx
+<a id="apps-admin-app-admin-journeys-id-page-tsx"></a>
+
+### Functions
+
+#### `JourneyDetailsPage()`
+
+## apps/admin/app/(admin)/journeys/_components/JourneysClientPage.tsx
+<a id="apps-admin-app-admin-journeys-components-journeysclientpage-tsx"></a>
+
+### Functions
+
+#### `JourneysClientPage({ initialJourneys, tenantId }: { initialJourneys: JourneyRow[], tenantId: string })`
+
+## apps/admin/app/(admin)/journeys/page.tsx
+<a id="apps-admin-app-admin-journeys-page-tsx"></a>
+
+### Functions
+
+#### `async JourneysPage({ searchParams }: { searchParams: Promise<{ tenantId?: string }> })`
+
+## apps/admin/app/(admin)/layout.tsx
+<a id="apps-admin-app-admin-layout-tsx"></a>
+
+### Functions
+
+#### `async AdminLayout({
+  children,
+}: {
+  children: React.ReactNode
+})`
+
+## apps/admin/app/(admin)/page.tsx
+<a id="apps-admin-app-admin-page-tsx"></a>
+
+### Functions
+
+#### `DashboardPage()`
+
+## apps/admin/app/(admin)/prompts/page.tsx
+<a id="apps-admin-app-admin-prompts-page-tsx"></a>
+
+### Functions
+
+#### `PromptsPage()`
+
+## apps/admin/app/(admin)/tenants/_components/TenantsClientPage.tsx
+<a id="apps-admin-app-admin-tenants-components-tenantsclientpage-tsx"></a>
+
+### Functions
+
+#### `TenantsClientPage({ initialTenants }: TenantsClientPageProps)`
+
+## apps/admin/app/(admin)/tenants/page.tsx
+<a id="apps-admin-app-admin-tenants-page-tsx"></a>
+
+### Functions
+
+#### `async TenantsPage()`
+
+## apps/admin/app/(admin)/users/[id]/page.tsx
+<a id="apps-admin-app-admin-users-id-page-tsx"></a>
+
+### Functions
+
+#### `UserProgressPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+})`
+
+## apps/admin/app/(admin)/users/page.tsx
+<a id="apps-admin-app-admin-users-page-tsx"></a>
+
+### Functions
+
+#### `UsersPage()`
+
+## apps/admin/app/layout.tsx
+<a id="apps-admin-app-layout-tsx"></a>
+
+### Functions
+
+#### `RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>)`
+
+### Constants
+
+- `metadata`: `Metadata`
+
+## apps/admin/app/login/page.tsx
+<a id="apps-admin-app-login-page-tsx"></a>
+
+### Functions
+
+#### `LoginPage()`
+
+## apps/admin/lib/api.ts
+<a id="apps-admin-lib-api-ts"></a>
+
+### Functions
+
+#### `async apiFetch(path: string, init: RequestInit)`
+
+## apps/admin/lib/supabase/client.ts
+<a id="apps-admin-lib-supabase-client-ts"></a>
+
+### Functions
+
+#### `createClient()`
+
+## apps/admin/lib/supabase/server.ts
+<a id="apps-admin-lib-supabase-server-ts"></a>
+
+### Functions
+
+#### `async createClient()`
+
+## apps/api/src/ai/geminiClient.ts
+<a id="apps-api-src-ai-geminiclient-ts"></a>
+
+### Functions
+
+#### `async generate(input: GenerateInput) -> Promise<string>`
+
+### Constants
+
+- `GenerateInput`: `interface`
+
+## apps/api/src/ai/prompts/coaching.ts
+<a id="apps-api-src-ai-prompts-coaching-ts"></a>
+
+### Constants
+
+- `coachingModeGuidance`
+
+## apps/api/src/ai/prompts/reflection.ts
+<a id="apps-api-src-ai-prompts-reflection-ts"></a>
+
+### Constants
+
+- `reflectionModeGuidance`
+
+## apps/api/src/ai/prompts/roleplay.ts
+<a id="apps-api-src-ai-prompts-roleplay-ts"></a>
+
+### Constants
+
+- `roleplayModeGuidance`
+
+## apps/api/src/ai/prompts/scoring.ts
+<a id="apps-api-src-ai-prompts-scoring-ts"></a>
+
+### Constants
+
+- `assessmentModeGuidance`
+
+## apps/api/src/ai/prompts/system.ts
+<a id="apps-api-src-ai-prompts-system-ts"></a>
+
+### Constants
+
+- `systemPrompt`
+
+## apps/api/src/db/__tests__/journeyLoader.test.ts
+<a id="apps-api-src-db-tests-journeyloader-test-ts"></a>
+
+## apps/api/src/db/analytics.ts
+<a id="apps-api-src-db-analytics-ts"></a>
+
+### Functions
+
+#### `async getCompletionRates(tenantId: string)`
+
+#### `async getStepFunnel(tenantId: string, journeyId: string, since: string)`
+
+#### `async getScoreDistribution(tenantId: string, journeyId: string, since: string)`
+
+## apps/api/src/db/journeyLoader.ts
+<a id="apps-api-src-db-journeyloader-ts"></a>
+
+### Functions
+
+#### `async listJourneys(tenantId: string) -> Promise<JourneyConfig[]>`
+
+#### `async getJourney(tenantId: string, journeyId: string) -> Promise<JourneyConfig | null>`
+
+#### `async createJourney(tenantId: string, journeyData: { id: string; title: string; description?: string; estimated_minutes?: number }) -> Promise<void>`
+
+#### `async updateJourney(tenantId: string, journeyId: string, journeyData: { title?: string; description?: string; estimated_minutes?: number }) -> Promise<void>`
+
+#### `async deleteJourney(tenantId: string, journeyId: string) -> Promise<void>`
+
+#### `async getStep(tenantId: string, journeyId: string, stepIndex: number) -> Promise<JourneyStep | null>`
+
+## apps/api/src/db/journeySteps.ts
+<a id="apps-api-src-db-journeysteps-ts"></a>
+
+### Functions
+
+#### `async createStep(tenantId: string, journeyId: string, stepData: {
+    id: string;
+    step_index: number;
+    mode: CoachingMode;
+    title: string;
+    opening_message: string;
+    min_turns?: number;
+    step_guidance?: string;
+    scoring_criteria?: string[] | null;
+  }) -> Promise<void>`
+
+#### `async updateStep(tenantId: string, journeyId: string, stepId: string, stepData: {
+    mode?: CoachingMode;
+    title?: string;
+    opening_message?: string;
+    min_turns?: number;
+    step_guidance?: string;
+    scoring_criteria?: string[] | null;
+  }) -> Promise<void>`
+
+#### `async deleteStep(tenantId: string, journeyId: string, stepId: string) -> Promise<void>`
+
+#### `async reorderSteps(tenantId: string, journeyId: string, stepIds: string[]) -> Promise<void>`
+
+## apps/api/src/db/journeys.ts
+<a id="apps-api-src-db-journeys-ts"></a>
+
+### Functions
+
+#### `async ensureUserJourney(userId: string, journeyId: string) -> Promise<{ id: string; currentStepIndex: number; status: string }>`
+
+Find or create an active user_journey row for this user + journey.
+
+#### `async advanceUserJourney(userJourneyId: string, nextStepIndex: number) -> Promise<void>`
+
+#### `async completeUserJourney(userJourneyId: string) -> Promise<void>`
+
+## apps/api/src/db/scores.ts
+<a id="apps-api-src-db-scores-ts"></a>
+
+### Functions
+
+#### `async saveScore(params: {
+  userId: string;
+  sessionId: string;
+  journeyId: string;
+  stepId: string;
+  score: AIScore;
+}) -> Promise<void>`
+
+Persist the evaluation result of an assessment step.
+
+#### `async getScoresForUser(userId: string)`
+
+Retrieve all scores for a given user, newest first.
+
+## apps/api/src/db/sessions.ts
+<a id="apps-api-src-db-sessions-ts"></a>
+
+### Functions
+
+#### `async startSession(params: {
+  userId: string;
+  journeyId: string;
+  stepId: string;
+  mode: CoachingMode;
+}) -> Promise<string>`
+
+Start a new session row and return its id.
+
+#### `async endSession(sessionId: string, summary: string) -> Promise<void>`
+
+End a session with an optional summary.
+
+#### `async logMessage(params: {
+  sessionId: string;
+  userId: string;
+  whatsappMessageId?: string;
+  role: 'user' | 'assistant';
+  content: string;
+}) -> Promise<void>`
+
+Append a message to the conversation log for a session.
+
+#### `async getSessionMessages(sessionId: string)`
+
+## apps/api/src/db/supabaseClient.ts
+<a id="apps-api-src-db-supabaseclient-ts"></a>
+
+### Functions
+
+#### `supabase() -> SupabaseClient`
+
+Returns a lazily-initialised Supabase client.
+Reads SUPABASE_URL and SUPABASE_ANON_KEY from the environment.
+
+## apps/api/src/db/tenants.ts
+<a id="apps-api-src-db-tenants-ts"></a>
+
+### Functions
+
+#### `async getTenantByPhoneNumberId(phoneNumberId: string) -> Promise<Tenant | null>`
+
+#### `async getTenantWhatsAppToken(tenantId: string) -> Promise<string | null>`
+
+#### `async getTenantPromptOverrides(tenantId: string) -> Promise<Record<string, string>>`
+
+#### `async listTenants() -> Promise<Tenant[]>`
+
+#### `async createTenant(payload: { name: string; phone_number_id?: string; webhook_verify_token?: string }) -> Promise<Tenant>`
+
+#### `async getTenantById(tenantId: string) -> Promise<Tenant | null>`
+
+#### `async updateTenant(tenantId: string, payload: { name?: string; phone_number_id?: string; webhook_verify_token?: string }) -> Promise<Tenant>`
+
+#### `async setTenantWhatsAppToken(tenantId: string, token: string) -> Promise<void>`
+
+#### `async upsertTenantPrompt(tenantId: string, key: string, content: string) -> Promise<void>`
+
+#### `async deleteTenantPrompt(tenantId: string, key: string) -> Promise<void>`
+
+## apps/api/src/db/users.ts
+<a id="apps-api-src-db-users-ts"></a>
+
+### Functions
+
+#### `async upsertUser(whatsappNumber: string, displayName: string) -> Promise<{ user: UserRecord; created: boolean }>`
+
+Find a user by their WhatsApp number, or create one if not present.
+Returns the user record and a boolean indicating whether it was just created.
+
+#### `async updateUserProgress(userId: string, journeyId: string | null, stepIndex: number) -> Promise<void>`
+
+Update the current journey/step pointers on the user record.
+
+#### `async markOnboarded(userId: string) -> Promise<void>`
+
+Mark a user as onboarded (first time they interact).
+
+#### `async claimMessage(whatsappMessageId: string) -> Promise<boolean>`
+
+Atomically claim a Meta message ID for processing.
+Returns true if this is the first time we've seen it, false if duplicate.
+
+#### `async getUserByNumber(whatsappNumber: string) -> Promise<UserRecord | null>`
+
+#### `async searchUsers(tenantId: string, query: string)`
+
+#### `async getUserProgress(tenantId: string, userId: string)`
+
+## apps/api/src/engine/__tests__/contextBuilder.test.ts
+<a id="apps-api-src-engine-tests-contextbuilder-test-ts"></a>
+
+## apps/api/src/engine/__tests__/flowRouter.test.ts
+<a id="apps-api-src-engine-tests-flowrouter-test-ts"></a>
+
+## apps/api/src/engine/__tests__/outputParser.test.ts
+<a id="apps-api-src-engine-tests-outputparser-test-ts"></a>
+
+## apps/api/src/engine/__tests__/sessionManager.test.ts
+<a id="apps-api-src-engine-tests-sessionmanager-test-ts"></a>
+
+## apps/api/src/engine/__tests__/sessionStore.contract.test.ts
+<a id="apps-api-src-engine-tests-sessionstore-contract-test-ts"></a>
+
+## apps/api/src/engine/contextBuilder.ts
+<a id="apps-api-src-engine-contextbuilder-ts"></a>
+
+### Functions
+
+#### `trimHistory(history: ConversationTurn[]) -> ConversationTurn[]`
+
+Trim the conversation history to a reasonable rolling window before sending
+to the model. Keeps the most recent turns and drops older ones.
+
+#### `transcript(history: ConversationTurn[]) -> string`
+
+Build a readable transcript string (used in step-end summaries).
+
+## apps/api/src/engine/flowRouter.ts
+<a id="apps-api-src-engine-flowrouter-ts"></a>
+
+### Functions
+
+#### `async handleInbound(msg: InboundMessage, tenantId: string, senderCreds: SenderCredentials) -> Promise<void>`
+
+Public entry point — handle a single inbound message end-to-end.
+
+## apps/api/src/engine/inMemorySessionStore.ts
+<a id="apps-api-src-engine-inmemorysessionstore-ts"></a>
+
+### Classes
+
+#### `InMemorySessionStore`
+
+In-memory session store used in tests and local development.
+
+##### Methods
+
+###### `async get(whatsappNumber: string) -> Promise<Session | null>`
+
+###### `async set(session: Session) -> Promise<void>`
+
+###### `async delete(whatsappNumber: string) -> Promise<void>`
+
+###### `async size() -> Promise<number>`
+
+###### `getSync(whatsappNumber: string) -> Session | undefined`
+
+Synchronous get — used internally by the legacy sessionManager shim.
+
+###### `setSync(session: Session) -> void`
+
+Synchronous set — used internally by the legacy sessionManager shim.
+
+###### `deleteSync(whatsappNumber: string) -> void`
+
+Synchronous delete — used internally by the legacy sessionManager shim.
+
+###### `sizeSync() -> number`
+
+Synchronous count — used by the health endpoint.
+
+
+## apps/api/src/engine/outputParser.ts
+<a id="apps-api-src-engine-outputparser-ts"></a>
+
+### Functions
+
+#### `parseAIResponse(raw: string) -> AIResponse`
+
+Parse a raw Gemini text response into a validated AIResponse.
+Returns a safe fallback if the response is missing or malformed (and logs the raw text).
+
+## apps/api/src/engine/redisSessionStore.ts
+<a id="apps-api-src-engine-redissessionstore-ts"></a>
+
+### Classes
+
+#### `RedisSessionStore`
+
+Upstash Redis session store.
+Reads UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN from the environment.
+TTL is managed by Redis — no sweeper needed.
+
+##### Methods
+
+###### `constructor()`
+
+###### `async get(whatsappNumber: string) -> Promise<Session | null>`
+
+###### `async set(session: Session) -> Promise<void>`
+
+###### `async delete(whatsappNumber: string) -> Promise<void>`
+
+###### `async size() -> Promise<number>`
+
+
+## apps/api/src/engine/sessionManager.ts
+<a id="apps-api-src-engine-sessionmanager-ts"></a>
+
+### Functions
+
+#### `configureSessionStore(s: ISessionStore) -> void`
+
+#### `async getSession(whatsappNumber: string) -> Promise<Session | undefined>`
+
+#### `async createSession(params: {
+  tenantId: string;
+  userId: string;
+  whatsappNumber: string;
+  initialMode?: FlowState;
+}) -> Promise<Session>`
+
+#### `async updateSession(whatsappNumber: string, patch: Partial<Session>) -> Promise<Session>`
+
+#### `async appendTurn(whatsappNumber: string, turn: ConversationTurn) -> Promise<Session>`
+
+#### `async resetSession(whatsappNumber: string) -> Promise<Session | undefined>`
+
+#### `async deleteSession(whatsappNumber: string) -> Promise<void>`
+
+#### `async activeSessionCount() -> Promise<number>`
+
+#### `startSessionSweeper(onExpire: ExpiryHandler) -> void`
+
+#### `stopSessionSweeper() -> void`
+
+### Constants
+
+- `ExpiryHandler`: `type`
+
+## apps/api/src/engine/sessionStore.ts
+<a id="apps-api-src-engine-sessionstore-ts"></a>
+
+## apps/api/src/index.ts
+<a id="apps-api-src-index-ts"></a>
+
+## apps/api/src/middleware/auth.ts
+<a id="apps-api-src-middleware-auth-ts"></a>
+
+### Functions
+
+#### `async requireAuth(req: Request, res: Response, next: NextFunction) -> Promise<void>`
+
+Require a valid Supabase Auth JWT on the request.
+Attaches req.user and req.tenantId on success; returns 401 on failure.
+
+#### `requireRole(...roles: string[])`
+
+Require the authenticated user to have one of the listed roles.
+Must be used after requireAuth.
+
+### Constants
+
+- `AuthUser`: `interface`
+
+## apps/api/src/whatsapp/__tests__/parser.test.ts
+<a id="apps-api-src-whatsapp-tests-parser-test-ts"></a>
+
+## apps/api/src/whatsapp/parser.ts
+<a id="apps-api-src-whatsapp-parser-ts"></a>
+
+### Functions
+
+#### `parseWebhook(payload: MetaWebhookPayload) -> InboundMessage[]`
+
+Extract normalised inbound messages from a Meta webhook payload.
+Status updates and empty payloads return an empty array.
+
+## apps/api/src/whatsapp/sender.ts
+<a id="apps-api-src-whatsapp-sender-ts"></a>
+
+### Functions
+
+#### `async sendTextMessage(to: string, text: string, creds: SenderCredentials) -> Promise<void>`
+
+#### `async sendButtonMessage(to: string, body: string, buttons: ButtonOption[], creds: SenderCredentials) -> Promise<void>`
+
+#### `async sendListMessage(to: string, body: string, buttonLabel: string, sections: ListSection[], creds: SenderCredentials) -> Promise<void>`
+
+#### `async markAsRead(messageId: string, creds: SenderCredentials) -> Promise<void>`
+
+### Constants
+
+- `SenderCredentials`: `interface`
+
+## apps/api/src/whatsapp/types.ts
+<a id="apps-api-src-whatsapp-types-ts"></a>
+
+### Constants
+
+- `MetaTextMessage`: `interface`
+- `MetaInteractiveMessage`: `interface`
+- `MetaUnsupportedMessage`: `interface`
+- `MetaMessage`: `type`
+- `MetaContact`: `interface`
+- `MetaStatus`: `interface`
+- `MetaWebhookPayload`: `interface`
+- `InboundMessage`: `interface`
+- `ButtonOption`: `interface`
+- `ListSection`: `interface`
+
+## apps/api/src/whatsapp/webhook.ts
+<a id="apps-api-src-whatsapp-webhook-ts"></a>
+
+### Functions
+
+#### `verifyWebhook(req: Request, res: Response) -> void`
+
+GET /webhook/whatsapp — Meta hub challenge verification.
+
+#### `verifySignature(req: Request, res: Response, next: NextFunction) -> void`
+
+Express middleware — verifies the X-Hub-Signature-256 HMAC header sent by Meta.
+Must be mounted AFTER express.json({ verify: rawBodyCapture }) so req.rawBody is populated.
+Rejects with 401 if the signature is missing or invalid.
+
+#### `receiveWebhook(req: Request, res: Response) -> void`
+
+POST /webhook/whatsapp — Meta inbound messages and status updates.
+
+## packages/shared/src/contracts/index.ts
+<a id="packages-shared-src-contracts-index-ts"></a>
+
+## packages/shared/src/contracts/sessionStore.contract.ts
+<a id="packages-shared-src-contracts-sessionstore-contract-ts"></a>
+
+### Functions
+
+#### `sessionStoreContract(factory: () => ISessionStore) -> void`
+
+Run this suite against any ISessionStore implementation to verify contract compliance.
+Usage: sessionStoreContract(() => new MyStore())
+
+## packages/shared/src/index.ts
+<a id="packages-shared-src-index-ts"></a>
+
+## packages/shared/src/schemas/index.ts
+<a id="packages-shared-src-schemas-index-ts"></a>
+
+### Constants
+
+- `inboundMessageSchema`
+- `scoreDimensionSchema`
+- `aiScoreSchema`
+- `aiResponseSchema`
+- `journeyStepSchema`
+- `journeySchema`
+- `createJourneySchema`
+- `updateJourneySchema`
+- `createJourneyStepSchema`
+- `updateJourneyStepSchema`
+- `reorderStepsSchema`
+- `tenantSchema`
+- `InboundMessageInput`: `type`
+- `AIResponseInput`: `type`
+- `JourneyInput`: `type`
+- `JourneyStepInput`: `type`
+- `TenantInput`: `type`
+- `createTenantSchema`
+- `updateTenantSchema`
+- `promptKeySchema`
+- `PromptKey`: `type`
+
+## packages/shared/src/types/index.ts
+<a id="packages-shared-src-types-index-ts"></a>
+
+### Constants
+
+- `FlowState`: `type`
+- `CoachingMode`: `type`
+- `ConversationTurn`: `interface`
+- `ScoreDimension`: `interface`
+- `AIScore`: `interface`
+- `AIResponse`: `interface`
+- `Session`: `interface`
+- `JourneyStep`: `interface`
+- `JourneyConfig`: `interface`
+- `UserRecord`: `interface`
+- `Tenant`: `interface`
+- `JourneyRow`: `interface`
+- `JourneyStepRow`: `interface`
+- `JourneyPromptRow`: `interface`
+- `ISessionStore`: `interface`

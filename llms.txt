@@ -1,0 +1,121 @@
+# CoachFlow
+
+> Multi-tenant WhatsApp coaching platform
+
+SignOutButton: Provides SignOutButton.
+page: Provides AnalyticsPage.
+page: Provides JourneyDetailsPage.
+JourneysClientPage: Provides JourneysClientPage.
+page: Provides JourneysPage.
+layout: Provides AdminLayout.
+page: Provides DashboardPage.
+page: Provides PromptsPage.
+TenantsClientPage: Provides TenantsClientPage.
+page: Provides TenantsPage.
+page: Provides UserProgressPage.
+page: Provides UsersPage.
+layout: Provides RootLayout.
+page: Provides LoginPage.
+api: Provides apiFetch.
+client: Provides createClient.
+server: Provides createClient.
+geminiClient: Provides generate.
+coaching:
+reflection:
+roleplay:
+scoring:
+system:
+journeyLoader.test:
+analytics: Provides getCompletionRates, getStepFunnel, getScoreDistribution.
+journeyLoader: Provides listJourneys, getJourney, createJourney, updateJourney, deleteJourney, getStep.
+journeySteps: Provides createStep, updateStep, deleteStep, reorderSteps.
+journeys: Provides ensureUserJourney, advanceUserJourney, completeUserJourney.
+scores: Provides saveScore, getScoresForUser.
+sessions: Provides startSession, endSession, logMessage, getSessionMessages.
+supabaseClient: Provides supabase.
+tenants: Provides getTenantByPhoneNumberId, getTenantWhatsAppToken, getTenantPromptOverrides, listTenants, createTenant, getTenantById, updateTenant, setTenantWhatsAppToken, upsertTenantPrompt, deleteTenantPrompt.
+users: Provides upsertUser, updateUserProgress, markOnboarded, claimMessage, getUserByNumber, searchUsers, getUserProgress.
+contextBuilder.test:
+flowRouter.test:
+outputParser.test:
+sessionManager.test:
+sessionStore.contract.test:
+contextBuilder: Provides trimHistory, transcript.
+flowRouter: Provides handleInbound.
+inMemorySessionStore: Defines InMemorySessionStore.
+outputParser: Provides parseAIResponse.
+redisSessionStore: Defines RedisSessionStore.
+sessionManager: Provides configureSessionStore, getSession, createSession, updateSession, appendTurn, resetSession, deleteSession, activeSessionCount, startSessionSweeper, stopSessionSweeper.
+sessionStore:
+index:
+auth: Provides requireAuth, requireRole.
+parser.test:
+parser: Provides parseWebhook.
+sender: Provides sendTextMessage, sendButtonMessage, sendListMessage, markAsRead.
+types:
+webhook: Provides verifyWebhook, verifySignature, receiveWebhook.
+index:
+sessionStore.contract: Provides sessionStoreContract.
+index:
+index:
+index:
+
+## Modules
+
+- [SignOutButton](llms-full.txt#apps-admin-app-admin-signoutbutton-tsx):
+- [page](llms-full.txt#apps-admin-app-admin-analytics-page-tsx):
+- [page](llms-full.txt#apps-admin-app-admin-journeys-id-page-tsx):
+- [JourneysClientPage](llms-full.txt#apps-admin-app-admin-journeys-components-journeysclientpage-tsx):
+- [page](llms-full.txt#apps-admin-app-admin-journeys-page-tsx):
+- [layout](llms-full.txt#apps-admin-app-admin-layout-tsx):
+- [page](llms-full.txt#apps-admin-app-admin-page-tsx):
+- [page](llms-full.txt#apps-admin-app-admin-prompts-page-tsx):
+- [TenantsClientPage](llms-full.txt#apps-admin-app-admin-tenants-components-tenantsclientpage-tsx):
+- [page](llms-full.txt#apps-admin-app-admin-tenants-page-tsx):
+- [page](llms-full.txt#apps-admin-app-admin-users-id-page-tsx):
+- [page](llms-full.txt#apps-admin-app-admin-users-page-tsx):
+- [layout](llms-full.txt#apps-admin-app-layout-tsx):
+- [page](llms-full.txt#apps-admin-app-login-page-tsx):
+- [api](llms-full.txt#apps-admin-lib-api-ts):
+- [client](llms-full.txt#apps-admin-lib-supabase-client-ts):
+- [server](llms-full.txt#apps-admin-lib-supabase-server-ts):
+- [geminiClient](llms-full.txt#apps-api-src-ai-geminiclient-ts):
+- [coaching](llms-full.txt#apps-api-src-ai-prompts-coaching-ts):
+- [reflection](llms-full.txt#apps-api-src-ai-prompts-reflection-ts):
+- [roleplay](llms-full.txt#apps-api-src-ai-prompts-roleplay-ts):
+- [scoring](llms-full.txt#apps-api-src-ai-prompts-scoring-ts):
+- [system](llms-full.txt#apps-api-src-ai-prompts-system-ts):
+- [journeyLoader.test](llms-full.txt#apps-api-src-db-tests-journeyloader-test-ts):
+- [analytics](llms-full.txt#apps-api-src-db-analytics-ts):
+- [journeyLoader](llms-full.txt#apps-api-src-db-journeyloader-ts):
+- [journeySteps](llms-full.txt#apps-api-src-db-journeysteps-ts):
+- [journeys](llms-full.txt#apps-api-src-db-journeys-ts):
+- [scores](llms-full.txt#apps-api-src-db-scores-ts):
+- [sessions](llms-full.txt#apps-api-src-db-sessions-ts):
+- [supabaseClient](llms-full.txt#apps-api-src-db-supabaseclient-ts):
+- [tenants](llms-full.txt#apps-api-src-db-tenants-ts):
+- [users](llms-full.txt#apps-api-src-db-users-ts):
+- [contextBuilder.test](llms-full.txt#apps-api-src-engine-tests-contextbuilder-test-ts):
+- [flowRouter.test](llms-full.txt#apps-api-src-engine-tests-flowrouter-test-ts):
+- [outputParser.test](llms-full.txt#apps-api-src-engine-tests-outputparser-test-ts):
+- [sessionManager.test](llms-full.txt#apps-api-src-engine-tests-sessionmanager-test-ts):
+- [sessionStore.contract.test](llms-full.txt#apps-api-src-engine-tests-sessionstore-contract-test-ts):
+- [contextBuilder](llms-full.txt#apps-api-src-engine-contextbuilder-ts):
+- [flowRouter](llms-full.txt#apps-api-src-engine-flowrouter-ts):
+- [inMemorySessionStore](llms-full.txt#apps-api-src-engine-inmemorysessionstore-ts):
+- [outputParser](llms-full.txt#apps-api-src-engine-outputparser-ts):
+- [redisSessionStore](llms-full.txt#apps-api-src-engine-redissessionstore-ts):
+- [sessionManager](llms-full.txt#apps-api-src-engine-sessionmanager-ts):
+- [sessionStore](llms-full.txt#apps-api-src-engine-sessionstore-ts):
+- [index](llms-full.txt#apps-api-src-index-ts):
+- [auth](llms-full.txt#apps-api-src-middleware-auth-ts):
+- [parser.test](llms-full.txt#apps-api-src-whatsapp-tests-parser-test-ts):
+- [parser](llms-full.txt#apps-api-src-whatsapp-parser-ts):
+- [sender](llms-full.txt#apps-api-src-whatsapp-sender-ts):
+- [types](llms-full.txt#apps-api-src-whatsapp-types-ts):
+- [webhook](llms-full.txt#apps-api-src-whatsapp-webhook-ts):
+- [index](llms-full.txt#packages-shared-src-contracts-index-ts):
+- [sessionStore.contract](llms-full.txt#packages-shared-src-contracts-sessionstore-contract-ts):
+- [index](llms-full.txt#packages-shared-src-index-ts):
+- [index](llms-full.txt#packages-shared-src-schemas-index-ts):
+- [index](llms-full.txt#packages-shared-src-types-index-ts):

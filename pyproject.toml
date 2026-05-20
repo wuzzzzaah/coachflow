@@ -1,0 +1,8 @@
+[tool.llmstxt_gen]
+name = "CoachFlow"
+description = "Multi-tenant WhatsApp coaching platform"
+include = ["apps/api/src/", "apps/admin/app/", "apps/admin/lib/", "packages/shared/src/"]
+exclude = ["**/node_modules/", "**/.next/", "**/dist/"]
+languages = ["typescript"]
+max_tokens_summary = 6000
+max_tokens_full = 32000
