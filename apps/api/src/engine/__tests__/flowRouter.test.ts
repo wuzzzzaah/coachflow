@@ -79,6 +79,7 @@ const SAMPLE_JOURNEY = {
   totalSteps: 2,
   estimatedDuration: '45 minutes',
   status: 'published' as const,
+  is_template: false,
   steps: [],
 };
 

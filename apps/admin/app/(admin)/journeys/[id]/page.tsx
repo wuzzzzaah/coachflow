@@ -23,6 +23,7 @@ interface Journey {
   description: string;
   estimated_minutes: number;
   status: 'draft' | 'published';
+  is_template: boolean;
   steps: Step[];
 }
 
@@ -37,7 +38,7 @@ export default function JourneyDetailsPage() {
 
   // Edit Journey State
   const [isEditingJourney, setIsEditingJourney] = useState(false);
-  const [journeyEditData, setJourneyEditData] = useState({ title: '', description: '', estimated_minutes: 0 });
+  const [journeyEditData, setJourneyEditData] = useState({ title: '', description: '', estimated_minutes: 0, is_template: false });
 
   // Add Step State
   const [isAddingStep, setIsAddingStep] = useState(false);
@@ -78,6 +79,20 @@ export default function JourneyDetailsPage() {
         body: JSON.stringify(journeyEditData),
       });
       setIsEditingJourney(false);
+      loadJourney();
+    } catch (err: unknown) {
+      alert((err as Error).message);
+    }
+  };
+
+  const handleToggleTemplate = async () => {
+    if (!journey) return;
+    const newValue = !journey.is_template;
+    try {
+      await apiFetch(`/api/journeys/${id}?tenantId=${tenantId}`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_template: newValue }),
+      });
       loadJourney();
     } catch (err: unknown) {
       alert((err as Error).message);
@@ -250,6 +265,11 @@ export default function JourneyDetailsPage() {
                 }`}>
                   {journey.status}
                 </span>
+                {journey.is_template && (
+                  <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs font-bold uppercase">
+                    Template
+                  </span>
+                )}
               </div>
               <p className="text-gray-600 mb-2">{journey.description}</p>
               <p className="text-sm text-gray-500">Estimated duration: {journey.estimated_minutes} minutes</p>
@@ -266,12 +286,23 @@ export default function JourneyDetailsPage() {
                 {journey.status === 'published' ? 'Unpublish' : 'Publish'}
               </button>
               <button
+                className={`px-4 py-2 rounded text-sm font-medium border ${
+                  journey.is_template
+                    ? 'hover:bg-purple-50 text-purple-600 border-purple-200'
+                    : 'hover:bg-gray-50 text-gray-600 border-gray-200'
+                }`}
+                onClick={handleToggleTemplate}
+              >
+                {journey.is_template ? 'Remove Template' : 'Mark as Template'}
+              </button>
+              <button
                 className="border px-4 py-2 rounded hover:bg-gray-50 text-sm font-medium"
                 onClick={() => {
                 setJourneyEditData({
                   title: journey.title,
                   description: journey.description,
                   estimated_minutes: journey.estimated_minutes,
+                  is_template: journey.is_template,
                 });
                   setIsEditingJourney(true);
                 }}

@@ -71,6 +71,7 @@ export interface JourneyConfig {
   totalSteps: number;
   estimatedDuration: string;
   status: 'draft' | 'published';
+  is_template: boolean;
   steps: JourneyStep[];
 }
 
@@ -104,6 +105,7 @@ export interface JourneyRow {
   estimated_minutes: number;
   version: number;
   status: 'draft' | 'published';
+  is_template: boolean;
   created_at: string;
 }
 

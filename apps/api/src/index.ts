@@ -10,6 +10,7 @@ import {
 import { InMemorySessionStore } from './engine/inMemorySessionStore';
 import { RedisSessionStore } from './engine/redisSessionStore';
 import { listJourneys, getJourney, createJourney, updateJourney, deleteJourney } from './db/journeyLoader';
+import { listTemplates, cloneJourney } from './db/journeys';
 import { createStep, updateStep, deleteStep, reorderSteps } from './db/journeySteps';
 import { getUserByNumber, searchUsers, getUserProgress } from './db/users';
 import { getScoresForUser } from './db/scores';
@@ -241,6 +242,18 @@ app.get('/api/journeys', async (req, res) => {
   }
 });
 
+app.get('/api/templates', requireRole('admin', 'super_admin'), async (req, res) => {
+  try {
+    const tenantId = (req.query.tenantId as string) ?? process.env.DEFAULT_TENANT_ID ?? '';
+    if (!tenantId) return res.status(400).json({ error: 'tenantId query param required' });
+
+    const templates = await listTemplates(tenantId);
+    return res.json(templates);
+  } catch (err) {
+    return res.status(500).json({ error: (err as Error).message });
+  }
+});
+
 app.post('/api/journeys', requireRole('admin'), async (req, res) => {
   try {
     const tenantId = (req.query.tenantId as string) ?? process.env.DEFAULT_TENANT_ID ?? '';
@@ -280,6 +293,19 @@ app.patch('/api/journeys/:id', requireRole('admin'), async (req, res) => {
 
     await updateJourney(tenantId, req.params.id, parsed.data);
     return res.json({ status: 'updated' });
+  } catch (err) {
+    return res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+app.post('/api/journeys/:id/clone', requireRole('admin'), async (req, res) => {
+  try {
+    const tenantId = (req.query.tenantId as string) ?? process.env.DEFAULT_TENANT_ID ?? '';
+    if (!tenantId) return res.status(400).json({ error: 'tenantId query param required' });
+
+    const { title } = req.body;
+    const newJourney = await cloneJourney(req.params.id, tenantId, title);
+    return res.status(201).json(newJourney);
   } catch (err) {
     return res.status(500).json({ error: (err as Error).message });
   }
