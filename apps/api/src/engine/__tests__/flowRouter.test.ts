@@ -91,6 +91,9 @@ const SAMPLE_JOURNEY = {
   estimatedDuration: '45 minutes',
   status: 'published' as const,
   is_template: false,
+  schedule_type: 'manual' as const,
+  schedule_hour: undefined,
+  schedule_day: undefined,
   steps: [],
 };
 
@@ -102,6 +105,9 @@ const SAMPLE_STEP = {
   openingMessage: 'Welcome to maritime leadership!',
   minTurns: 1,
   stepGuidance: 'Guide the user.',
+  branchOnLowScore: false,
+  branchScoreThreshold: null,
+  branchStepIndex: null,
 };
 
 function makeUser(
