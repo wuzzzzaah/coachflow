@@ -22,6 +22,7 @@ export default async function AdminLayout({
     { name: 'Cohorts', href: '/cohorts' },
     { name: 'Users', href: '/users' },
     { name: 'Analytics', href: '/analytics' },
+    { name: 'Audit Log', href: '/audit-log' },
     { name: 'Prompts', href: '/prompts' },
     { name: 'Webhooks', href: '/webhooks' },
     { name: 'Tenants', href: '/tenants' },

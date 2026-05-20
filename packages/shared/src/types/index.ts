@@ -140,6 +140,18 @@ export interface TenantWebhook {
   created_at: string;
 }
 
+export interface AuditLog {
+  id: string;
+  tenant_id: string | null;
+  actor_id: string;
+  actor_email: string | null;
+  action: string;
+  resource: string;
+  resource_id: string | null;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+}
+
 // ── Adapter interfaces ────────────────────────────────────────────────────────
 
 export interface ISessionStore {
