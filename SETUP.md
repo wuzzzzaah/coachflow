@@ -72,7 +72,7 @@ pnpm --filter admin dev
 
 1.  **Create a Meta WhatsApp Business App**: Follow the official Meta documentation to create a WhatsApp Business app.
 2.  **Configure Webhook**:
-    -   Point the webhook URL to your API endpoint (e.g., `https://your-public-url.com/whatsapp/webhook`).
+    -   Point the webhook URL to your API endpoint (e.g., `https://your-public-url.com/webhook/whatsapp`).
     -   Use the `WHATSAPP_WEBHOOK_VERIFY_TOKEN` you set in your `.env`.
 3.  **Update `.env`**: Fill in `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_ACCESS_TOKEN`, and `WHATSAPP_APP_SECRET`.
 
