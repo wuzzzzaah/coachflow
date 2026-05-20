@@ -78,6 +78,7 @@ const SAMPLE_JOURNEY = {
   description: 'Lead at sea.',
   totalSteps: 2,
   estimatedDuration: '45 minutes',
+  status: 'published' as const,
   steps: [],
 };
 
@@ -91,7 +92,14 @@ const SAMPLE_STEP = {
   stepGuidance: 'Guide the user.',
 };
 
-function makeUser(overrides: Partial<{ id: string; onboarded_at: string | null }> = {}) {
+function makeUser(
+  overrides: Partial<{
+    id: string;
+    onboarded_at: string | null;
+    current_journey_id: string | null;
+    current_step_index: number;
+  }> = {},
+) {
   const now = new Date().toISOString();
   return {
     id: 'user-abc',

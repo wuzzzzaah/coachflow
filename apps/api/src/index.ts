@@ -146,7 +146,21 @@ app.get('/api/journeys', async (req, res) => {
   try {
     const tenantId = (req.query.tenantId as string) ?? process.env.DEFAULT_TENANT_ID ?? '';
     if (!tenantId) return res.status(400).json({ error: 'tenantId query param required' });
-    const journeys = await listJourneys(tenantId);
+
+    const includeAll = req.query.includeAll === 'true';
+    let includeDrafts = false;
+
+    if (includeAll) {
+      const user = (req as any).user;
+      const role = user?.['https://coachflow.ai/role'] || user?.app_metadata?.role;
+      if (role === 'admin' || role === 'super_admin') {
+        includeDrafts = true;
+      } else {
+        return res.status(403).json({ error: 'admin_role_required_for_includeAll' });
+      }
+    }
+
+    const journeys = await listJourneys(tenantId, includeDrafts);
     return res.json(journeys);
   } catch (err) {
     return res.status(500).json({ error: (err as Error).message });

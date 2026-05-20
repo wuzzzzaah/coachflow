@@ -19,6 +19,7 @@ const sampleJourney: JourneyRow = {
   description: 'A leadership journey.',
   estimated_minutes: 45,
   version: 1,
+  status: 'published',
   created_at: new Date().toISOString(),
 };
 

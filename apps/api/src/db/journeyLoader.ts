@@ -22,17 +22,24 @@ function rowsToConfig(journey: JourneyRow, steps: JourneyStepRow[]): JourneyConf
     description: journey.description,
     totalSteps: sorted.length,
     estimatedDuration: `${journey.estimated_minutes} minutes`,
+    status: journey.status,
     steps: sorted.map(rowToStep),
   };
 }
 
-export async function listJourneys(tenantId: string): Promise<JourneyConfig[]> {
+export async function listJourneys(tenantId: string, includeDrafts = false): Promise<JourneyConfig[]> {
   const db = supabase();
-  const { data: journeyRows, error: jErr } = await db
+  let query = db
     .from('journeys')
     .select('*')
     .eq('tenant_id', tenantId)
     .is('deleted_at', null);
+
+  if (!includeDrafts) {
+    query = query.eq('status', 'published');
+  }
+
+  const { data: journeyRows, error: jErr } = await query;
   if (jErr) throw new Error(`List journeys failed: ${jErr.message}`);
   if (!journeyRows || journeyRows.length === 0) return [];
 
@@ -83,7 +90,7 @@ export async function getJourney(
 
 export async function createJourney(
   tenantId: string,
-  journeyData: { id: string; title: string; description?: string; estimated_minutes?: number }
+  journeyData: { id: string; title: string; description?: string; estimated_minutes?: number; status?: 'draft' | 'published' }
 ): Promise<void> {
   const db = supabase();
   const { error } = await db.from('journeys').insert({
@@ -92,6 +99,7 @@ export async function createJourney(
     title: journeyData.title,
     description: journeyData.description ?? '',
     estimated_minutes: journeyData.estimated_minutes ?? 30,
+    status: journeyData.status ?? 'draft',
     version: 1,
   });
   if (error) throw new Error(`Create journey failed: ${error.message}`);
@@ -100,13 +108,14 @@ export async function createJourney(
 export async function updateJourney(
   tenantId: string,
   journeyId: string,
-  journeyData: { title?: string; description?: string; estimated_minutes?: number }
+  journeyData: { title?: string; description?: string; estimated_minutes?: number; status?: 'draft' | 'published' }
 ): Promise<void> {
   const db = supabase();
   const updates: Record<string, unknown> = {};
   if (journeyData.title !== undefined) updates.title = journeyData.title;
   if (journeyData.description !== undefined) updates.description = journeyData.description;
   if (journeyData.estimated_minutes !== undefined) updates.estimated_minutes = journeyData.estimated_minutes;
+  if (journeyData.status !== undefined) updates.status = journeyData.status;
 
   if (Object.keys(updates).length === 0) return;
 
