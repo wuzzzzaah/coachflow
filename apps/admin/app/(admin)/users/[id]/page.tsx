@@ -12,6 +12,18 @@ interface UserProgress {
   last_active_at: string | null;
 }
 
+interface UserSession {
+  id: string;
+  journey_id: string;
+  journey_title: string;
+  step_id: string;
+  step_title: string;
+  mode: string;
+  started_at: string;
+  ended_at: string | null;
+  message_count: number;
+}
+
 interface ScoreDimension {
   name: string;
   score: number;
@@ -38,6 +50,7 @@ export default function UserProgressPage({
   const resolvedParams = use(params);
   const userId = resolvedParams.id;
   const [progress, setProgress] = useState<UserProgress[]>([]);
+  const [sessions, setSessions] = useState<UserSession[]>([]);
   const [scores, setScores] = useState<UserScore[]>([]);
   const [expandedScoreIds, setExpandedScoreIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
@@ -50,15 +63,18 @@ export default function UserProgressPage({
           process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID ||
           "00000000-0000-0000-0000-000000000000";
 
-        const [progressRes, scoresRes] = await Promise.all([
+        const [progressRes, sessionsRes, scoresRes] = await Promise.all([
           apiFetch(`/api/users/${userId}/progress?tenantId=${tenantId}`),
+          apiFetch(`/api/users/${userId}/sessions?tenantId=${tenantId}`),
           apiFetch(`/api/users/${userId}/scores?tenantId=${tenantId}`)
         ]);
 
         const progressData = await progressRes.json();
+        const sessionsData = await sessionsRes.json();
         const scoresData = await scoresRes.json();
 
         setProgress(Array.isArray(progressData) ? progressData : []);
+        setSessions(Array.isArray(sessionsData) ? sessionsData : []);
         setScores(Array.isArray(scoresData) ? scoresData : []);
       } catch (error) {
         console.error("Error fetching user data:", error);
@@ -161,6 +177,86 @@ export default function UserProgressPage({
       </div>
 
       <div className="flex flex-col gap-4 mt-8">
+        <h2 className="text-xl font-semibold">Recent Sessions</h2>
+        <div className="overflow-x-auto rounded-lg border dark:border-zinc-700">
+          <table className="min-w-full divide-y divide-zinc-200 dark:divide-zinc-700">
+            <thead className="bg-zinc-50 dark:bg-zinc-800">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider dark:text-zinc-400">
+                  Date
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider dark:text-zinc-400">
+                  Journey / Step
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider dark:text-zinc-400">
+                  Mode
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider dark:text-zinc-400">
+                  Status
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-zinc-500 uppercase tracking-wider dark:text-zinc-400">
+                  Action
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-zinc-200 dark:bg-zinc-900 dark:divide-zinc-700">
+              {loading ? (
+                <tr>
+                  <td colSpan={5} className="px-6 py-4 text-center text-zinc-500">
+                    Loading sessions...
+                  </td>
+                </tr>
+              ) : sessions.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-6 py-4 text-center text-zinc-500">
+                    No sessions found for this user.
+                  </td>
+                </tr>
+              ) : (
+                sessions.map((s) => (
+                  <tr key={s.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap text-zinc-900 dark:text-zinc-100">
+                      {new Date(s.started_at).toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                        {s.journey_title}
+                      </div>
+                      <div className="text-xs text-zinc-500 dark:text-zinc-400">
+                        {s.step_title}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-600 dark:text-zinc-400 capitalize">
+                      {s.mode}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {s.ended_at ? (
+                        <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 rounded">
+                          Completed
+                        </span>
+                      ) : (
+                        <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 rounded">
+                          In Progress
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <Link
+                        href={`/users/${userId}/sessions/${s.id}`}
+                        className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                      >
+                        View Transcript
+                      </Link>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-4 mt-8">
         <h2 className="text-xl font-semibold">Session Scores</h2>
         <div className="overflow-x-auto rounded-lg border dark:border-zinc-700">
           <table className="min-w-full divide-y divide-zinc-200 dark:divide-zinc-700">
@@ -206,7 +302,13 @@ export default function UserProgressPage({
                       <td className="px-6 py-4 whitespace-nowrap text-zinc-900 dark:text-zinc-100 font-medium">
                         {s.score} / {s.max_score}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-4">
+                        <Link
+                          href={`/users/${userId}/sessions/${s.session_id}`}
+                          className="text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200"
+                        >
+                          View Transcript
+                        </Link>
                         <button
                           onClick={() => toggleScoreExpanded(s.id)}
                           className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
