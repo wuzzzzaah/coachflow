@@ -27,6 +27,9 @@ function rowsToConfig(journey: JourneyRow, steps: JourneyStepRow[]): JourneyConf
     estimatedDuration: `${journey.estimated_minutes} minutes`,
     status: journey.status,
     is_template: journey.is_template,
+    schedule_type: journey.schedule_type,
+    schedule_hour: journey.schedule_hour ?? undefined,
+    schedule_day: journey.schedule_day ?? undefined,
     steps: sorted.map(rowToStep),
   };
 }
@@ -112,7 +115,16 @@ export async function createJourney(
 export async function updateJourney(
   tenantId: string,
   journeyId: string,
-  journeyData: { title?: string; description?: string; estimated_minutes?: number; status?: 'draft' | 'published'; is_template?: boolean }
+  journeyData: {
+    title?: string;
+    description?: string;
+    estimated_minutes?: number;
+    status?: 'draft' | 'published';
+    is_template?: boolean;
+    schedule_type?: 'manual' | 'daily' | 'weekly';
+    schedule_hour?: number | null;
+    schedule_day?: number | null;
+  }
 ): Promise<void> {
   const db = supabase();
   const updates: Record<string, unknown> = {};
@@ -121,6 +133,9 @@ export async function updateJourney(
   if (journeyData.estimated_minutes !== undefined) updates.estimated_minutes = journeyData.estimated_minutes;
   if (journeyData.status !== undefined) updates.status = journeyData.status;
   if (journeyData.is_template !== undefined) updates.is_template = journeyData.is_template;
+  if (journeyData.schedule_type !== undefined) updates.schedule_type = journeyData.schedule_type;
+  if (journeyData.schedule_hour !== undefined) updates.schedule_hour = journeyData.schedule_hour;
+  if (journeyData.schedule_day !== undefined) updates.schedule_day = journeyData.schedule_day;
 
   if (Object.keys(updates).length === 0) return;
 

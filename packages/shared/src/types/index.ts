@@ -75,6 +75,9 @@ export interface JourneyConfig {
   estimatedDuration: string;
   status: 'draft' | 'published';
   is_template: boolean;
+  schedule_type: 'manual' | 'daily' | 'weekly';
+  schedule_hour?: number;
+  schedule_day?: number;
   steps: JourneyStep[];
 }
 
@@ -109,6 +112,9 @@ export interface JourneyRow {
   version: number;
   status: 'draft' | 'published';
   is_template: boolean;
+  schedule_type: 'manual' | 'daily' | 'weekly';
+  schedule_hour: number | null;
+  schedule_day: number | null;
   created_at: string;
 }
 

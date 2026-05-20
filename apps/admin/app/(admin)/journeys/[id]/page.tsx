@@ -27,6 +27,9 @@ interface Journey {
   estimated_minutes: number;
   status: 'draft' | 'published';
   is_template: boolean;
+  schedule_type: 'manual' | 'daily' | 'weekly';
+  schedule_hour?: number | null;
+  schedule_day?: number | null;
   steps: Step[];
 }
 
@@ -41,7 +44,15 @@ export default function JourneyDetailsPage() {
 
   // Edit Journey State
   const [isEditingJourney, setIsEditingJourney] = useState(false);
-  const [journeyEditData, setJourneyEditData] = useState({ title: '', description: '', estimated_minutes: 0, is_template: false });
+  const [journeyEditData, setJourneyEditData] = useState({
+    title: '',
+    description: '',
+    estimated_minutes: 0,
+    is_template: false,
+    schedule_type: 'manual' as 'manual' | 'daily' | 'weekly',
+    schedule_hour: 12,
+    schedule_day: 0
+  });
 
   // Add Step State
   const [isAddingStep, setIsAddingStep] = useState(false);
@@ -306,6 +317,9 @@ export default function JourneyDetailsPage() {
                   description: journey.description,
                   estimated_minutes: journey.estimated_minutes,
                   is_template: journey.is_template,
+                  schedule_type: journey.schedule_type,
+                  schedule_hour: journey.schedule_hour ?? 12,
+                  schedule_day: journey.schedule_day ?? 0,
                 });
                   setIsEditingJourney(true);
                 }}
@@ -315,6 +329,86 @@ export default function JourneyDetailsPage() {
             </div>
           </div>
         )}
+      </div>
+
+      {/* Schedule Section */}
+      <div className="bg-white p-6 rounded-lg shadow-sm border mb-8">
+        <h2 className="text-xl font-bold mb-4">Delivery Schedule</h2>
+        <div className="grid grid-cols-3 gap-4 items-end">
+          <div>
+            <label className="block text-sm font-medium mb-1">Schedule Type</label>
+            <select
+              className="w-full border p-2 rounded"
+              value={journey.schedule_type}
+              onChange={async (e) => {
+                const val = e.target.value as any;
+                await apiFetch(`/api/journeys/${id}?tenantId=${tenantId}`, {
+                  method: "PATCH", headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ schedule_type: val }),
+                });
+                loadJourney();
+              }}
+            >
+              <option value="manual">Manual (On-demand)</option>
+              <option value="daily">Daily Drip</option>
+              <option value="weekly">Weekly Drip</option>
+            </select>
+          </div>
+
+          {journey.schedule_type !== 'manual' && (
+            <div>
+              <label className="block text-sm font-medium mb-1">Time (UTC Hour)</label>
+              <select
+                className="w-full border p-2 rounded"
+                value={journey.schedule_hour ?? 12}
+                onChange={async (e) => {
+                  const val = parseInt(e.target.value);
+                  await apiFetch(`/api/journeys/${id}?tenantId=${tenantId}`, {
+                    method: "PATCH", headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ schedule_hour: val }),
+                  });
+                  loadJourney();
+                }}
+              >
+                {Array.from({ length: 24 }).map((_, i) => (
+                  <option key={i} value={i}>{i}:00 UTC</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {journey.schedule_type === 'weekly' && (
+            <div>
+              <label className="block text-sm font-medium mb-1">Day of Week</label>
+              <select
+                className="w-full border p-2 rounded"
+                value={journey.schedule_day ?? 1}
+                onChange={async (e) => {
+                  const val = parseInt(e.target.value);
+                  await apiFetch(`/api/journeys/${id}?tenantId=${tenantId}`, {
+                    method: "PATCH", headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ schedule_day: val }),
+                  });
+                  loadJourney();
+                }}
+              >
+                <option value={0}>Sunday</option>
+                <option value={1}>Monday</option>
+                <option value={2}>Tuesday</option>
+                <option value={3}>Wednesday</option>
+                <option value={4}>Thursday</option>
+                <option value={5}>Friday</option>
+                <option value={6}>Saturday</option>
+              </select>
+            </div>
+          )}
+        </div>
+        <p className="mt-4 text-sm text-gray-500">
+          {journey.schedule_type === 'manual'
+            ? "Users only receive steps when they reply to the previous step or a coach manually nudges."
+            : `Next steps will be delivered automatically ${journey.schedule_type === 'daily' ? 'every day' : 'every week'} at ${journey.schedule_hour ?? 12}:00 UTC.`
+          }
+        </p>
       </div>
 
       {/* Steps List */}
