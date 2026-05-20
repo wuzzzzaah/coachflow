@@ -156,6 +156,79 @@ describe('handleInbound — first message triggers onboarding', () => {
   });
 });
 
+describe('handleInbound — journey completion scorecard', () => {
+  it('sends scorecard on final step completion', async () => {
+    const { getScoresForUser } = await import('../../db/scores');
+    const { completeUserJourney } = await import('../../db/journeys');
+
+    // 1. Start journey. Total steps = 2.
+    const startMsg = firstMessage(buttonFixture);
+    await handleInbound(startMsg, TENANT);
+
+    // 2. Mock state to be on the LAST step (index 1)
+    const sessionStore = (await import('../sessionManager')).getSession;
+    const session = await sessionStore(startMsg.whatsappNumber);
+    if (session) {
+      session.currentStepIndex = 1;
+    }
+
+    // 3. Mock AI response to advance
+    vi.mocked(generate).mockResolvedValue(
+      JSON.stringify({
+        message: 'Final step done!',
+        intent: 'advance',
+        shouldAdvance: true,
+      }),
+    );
+
+    // 4. Mock journey scores for the scorecard
+    vi.mocked(getScoresForUser).mockResolvedValue([
+      {
+        score: 8,
+        criteria: [{ name: 'Empathy', score: 9 }, { name: 'Communication', score: 7 }],
+        feedback: 'Great summary here.\n\nDevelopment focus: Listening',
+      },
+      {
+        score: 9,
+        criteria: [{ name: 'Empathy', score: 9 }, { name: 'Communication', score: 9 }],
+        feedback: 'Good work.',
+      }
+    ] as any);
+
+    const followMsg = {
+      whatsappNumber: startMsg.whatsappNumber,
+      whatsappMessageId: 'wamid.comp001',
+      kind: 'text' as const,
+      text: 'I am done',
+    };
+
+    await handleInbound(followMsg, TENANT);
+
+    expect(completeUserJourney).toHaveBeenCalled();
+    // Verify scorecard message
+    expect(sendTextMessage).toHaveBeenCalledWith(
+      startMsg.whatsappNumber,
+      expect.stringContaining("You've completed *Maritime Leadership*!"),
+      undefined,
+    );
+    expect(sendTextMessage).toHaveBeenCalledWith(
+      startMsg.whatsappNumber,
+      expect.stringContaining("overall score: 8.5 / 10"),
+      undefined,
+    );
+    expect(sendTextMessage).toHaveBeenCalledWith(
+      startMsg.whatsappNumber,
+      expect.stringContaining("Empathy — 9/10"),
+      undefined,
+    );
+    expect(sendTextMessage).toHaveBeenCalledWith(
+      startMsg.whatsappNumber,
+      expect.stringContaining("Great summary here."),
+      undefined,
+    );
+  });
+});
+
 describe('handleInbound — idle state handling', () => {
   it('sends journey list when an idle user sends a random message', async () => {
     vi.mocked(upsertUser).mockResolvedValue({
