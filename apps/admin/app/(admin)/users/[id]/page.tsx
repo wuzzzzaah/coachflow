@@ -3,6 +3,7 @@
 import React, { useEffect, useState, use } from "react";
 import Link from "next/link";
 import { apiFetch } from "../../../../lib/api";
+import { downloadCsv } from "../../../../lib/downloadCsv";
 
 interface UserProgress {
   journey_id: string;
@@ -119,15 +120,33 @@ export default function UserProgressPage({
     });
   };
 
+  const handleExport = async () => {
+    try {
+      const tenantId = process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID || "00000000-0000-0000-0000-000000000000";
+      await downloadCsv(`/api/users/${userId}/export?tenantId=${tenantId}`, `user-${userId}-export.csv`);
+    } catch (error) {
+      console.error("Export failed:", error);
+      alert("Failed to export user CSV");
+    }
+  };
+
   return (
     <div className="p-8 max-w-6xl mx-auto flex flex-col gap-6">
       <div className="flex flex-col gap-2">
-        <Link
-          href="/users"
-          className="text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300 w-fit flex items-center gap-1"
-        >
-          ← Back to Users
-        </Link>
+        <div className="flex justify-between items-start">
+          <Link
+            href="/users"
+            className="text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300 w-fit flex items-center gap-1"
+          >
+            ← Back to Users
+          </Link>
+          <button
+            onClick={handleExport}
+            className="px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm font-medium"
+          >
+            Export CSV
+          </button>
+        </div>
         <h1 className="text-2xl font-bold">User Progress</h1>
         <p className="text-sm text-zinc-500 font-mono">ID: {userId}</p>
       </div>

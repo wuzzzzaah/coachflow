@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { apiFetch } from "../../../lib/api";
+import { downloadCsv } from "../../../lib/downloadCsv";
 
 interface User {
   id: string;
@@ -39,10 +40,26 @@ export default function UsersPage() {
     return () => clearTimeout(timer);
   }, [query, fetchUsers]);
 
+  const handleExport = async () => {
+    try {
+      const tenantId = process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID || "00000000-0000-0000-0000-000000000000";
+      await downloadCsv(`/api/users/export?tenantId=${tenantId}`, "users-export.csv");
+    } catch (error) {
+      console.error("Export failed:", error);
+      alert("Failed to export users CSV");
+    }
+  };
+
   return (
     <div className="p-8 max-w-6xl mx-auto flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Users</h1>
+        <button
+          onClick={handleExport}
+          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm font-medium"
+        >
+          Export CSV
+        </button>
       </div>
 
       <div className="flex flex-col gap-4">

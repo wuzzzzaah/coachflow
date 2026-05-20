@@ -14,6 +14,7 @@ import { listTemplates, cloneJourney } from './db/journeys';
 import { createStep, updateStep, deleteStep, reorderSteps } from './db/journeySteps';
 import { getUserByNumber, searchUsers, getUserProgress } from './db/users';
 import { getScoresForUser } from './db/scores';
+import { getUsersExportData, getUserExportData } from './db/export';
 import { getSessionMessages, getUserSessions, getSessionById } from './db/sessions';
 import { listTenants, createTenant, getTenantById, updateTenant, setTenantWhatsAppToken, getTenantWhatsAppToken, getTenantPromptOverrides, upsertTenantPrompt, deleteTenantPrompt } from './db/tenants';
 import { listWebhooks, createWebhook, deleteWebhook } from './db/webhooks';
@@ -231,6 +232,39 @@ app.delete('/api/cohorts/:id/members/:userId', requireRole('admin'), async (req,
   try {
     await removeCohortMember(req.params.id, req.params.userId);
     return res.status(204).send();
+  } catch (err) {
+    return res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+// CSV export APIs — must be defined before /api/users/:id routes to avoid param capture
+app.get('/api/users/export', requireRole('admin', 'super_admin'), async (req, res) => {
+  try {
+    const tenantId = (req.query.tenantId as string) ?? process.env.DEFAULT_TENANT_ID ?? '';
+    if (!tenantId) return res.status(400).json({ error: 'tenantId query param required' });
+
+    const data = await getUsersExportData(tenantId);
+    const csv = toCsv(data);
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="users-export.csv"');
+    return res.send(csv);
+  } catch (err) {
+    return res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+app.get('/api/users/:id/export', requireRole('admin', 'super_admin'), async (req, res) => {
+  try {
+    const tenantId = (req.query.tenantId as string) ?? process.env.DEFAULT_TENANT_ID ?? '';
+    if (!tenantId) return res.status(400).json({ error: 'tenantId query param required' });
+
+    const data = await getUserExportData(req.params.id, tenantId);
+    const csv = toCsv(data);
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="user-${req.params.id}-export.csv"`);
+    return res.send(csv);
   } catch (err) {
     return res.status(500).json({ error: (err as Error).message });
   }
@@ -657,6 +691,21 @@ app.delete('/api/tenants/:id/prompts/:key', requireRole('admin', 'super_admin'),
     return res.status(500).json({ error: (err as Error).message });
   }
 });
+
+/** Simple JSON to CSV converter helper. */
+function toCsv(data: any[]): string {
+  if (data.length === 0) return '';
+  const headers = Object.keys(data[0]);
+  const rows = data.map(obj =>
+    headers.map(header => {
+      let val = (obj as any)[header];
+      if (val === null || val === undefined) val = '';
+      const stringVal = String(val).replace(/"/g, '""');
+      return `"${stringVal}"`;
+    }).join(',')
+  );
+  return [headers.join(','), ...rows].join('\n');
+}
 
 // Session sweeper — expire idle sessions every 5 min (replaced by Redis TTL in T8.1).
 startSessionSweeper(async (s) => {
