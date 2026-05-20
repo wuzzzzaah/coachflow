@@ -70,6 +70,7 @@ export interface JourneyConfig {
   description: string;
   totalSteps: number;
   estimatedDuration: string;
+  status: 'draft' | 'published';
   steps: JourneyStep[];
 }
 
@@ -102,6 +103,7 @@ export interface JourneyRow {
   description: string;
   estimated_minutes: number;
   version: number;
+  status: 'draft' | 'published';
   created_at: string;
 }
 

@@ -22,6 +22,7 @@ interface Journey {
   title: string;
   description: string;
   estimated_minutes: number;
+  status: 'draft' | 'published';
   steps: Step[];
 }
 
@@ -77,6 +78,20 @@ export default function JourneyDetailsPage() {
         body: JSON.stringify(journeyEditData),
       });
       setIsEditingJourney(false);
+      loadJourney();
+    } catch (err: unknown) {
+      alert((err as Error).message);
+    }
+  };
+
+  const handleToggleStatus = async () => {
+    if (!journey) return;
+    const newStatus = journey.status === 'published' ? 'draft' : 'published';
+    try {
+      await apiFetch(`/api/journeys/${id}?tenantId=${tenantId}`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
       loadJourney();
     } catch (err: unknown) {
       alert((err as Error).message);
@@ -226,23 +241,44 @@ export default function JourneyDetailsPage() {
         ) : (
           <div className="flex justify-between items-start">
             <div>
-              <h1 className="text-3xl font-bold mb-2">{journey.title}</h1>
+              <div className="flex items-center gap-3 mb-2">
+                <h1 className="text-3xl font-bold">{journey.title}</h1>
+                <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${
+                  journey.status === 'published'
+                    ? 'bg-green-100 text-green-800'
+                    : 'bg-gray-100 text-gray-800'
+                }`}>
+                  {journey.status}
+                </span>
+              </div>
               <p className="text-gray-600 mb-2">{journey.description}</p>
               <p className="text-sm text-gray-500">Estimated duration: {journey.estimated_minutes} minutes</p>
             </div>
-            <button
-              className="border px-4 py-2 rounded hover:bg-gray-50 text-sm font-medium"
-              onClick={() => {
+            <div className="flex gap-2">
+              <button
+                className={`px-4 py-2 rounded text-sm font-medium border ${
+                  journey.status === 'published'
+                    ? 'hover:bg-red-50 text-red-600 border-red-200'
+                    : 'hover:bg-green-50 text-green-600 border-green-200'
+                }`}
+                onClick={handleToggleStatus}
+              >
+                {journey.status === 'published' ? 'Unpublish' : 'Publish'}
+              </button>
+              <button
+                className="border px-4 py-2 rounded hover:bg-gray-50 text-sm font-medium"
+                onClick={() => {
                 setJourneyEditData({
                   title: journey.title,
                   description: journey.description,
                   estimated_minutes: journey.estimated_minutes,
                 });
-                setIsEditingJourney(true);
-              }}
-            >
-              Edit
-            </button>
+                  setIsEditingJourney(true);
+                }}
+              >
+                Edit
+              </button>
+            </div>
           </div>
         )}
       </div>

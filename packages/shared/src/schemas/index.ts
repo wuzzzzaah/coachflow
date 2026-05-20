@@ -53,6 +53,7 @@ export const journeySchema = z.object({
   description: z.string(),
   estimated_minutes: z.number().int().min(0),
   version: z.number().int().min(1),
+  status: z.enum(['draft', 'published']),
   created_at: z.string(),
   deleted_at: z.string().nullable().optional(),
 });
@@ -68,6 +69,7 @@ export const updateJourneySchema = z.object({
   title: z.string().optional(),
   description: z.string().optional(),
   estimated_minutes: z.number().int().min(0).optional(),
+  status: z.enum(['draft', 'published']).optional(),
 });
 
 export const createJourneyStepSchema = z.object({
