@@ -14,8 +14,10 @@ import { createStep, updateStep, deleteStep, reorderSteps } from './db/journeySt
 import { getUserByNumber, searchUsers, getUserProgress } from './db/users';
 import { getScoresForUser } from './db/scores';
 import { getSessionMessages } from './db/sessions';
-import { listTenants, createTenant, getTenantById, updateTenant, setTenantWhatsAppToken, getTenantPromptOverrides, upsertTenantPrompt, deleteTenantPrompt } from './db/tenants';
+import { listTenants, createTenant, getTenantById, updateTenant, setTenantWhatsAppToken, getTenantWhatsAppToken, getTenantPromptOverrides, upsertTenantPrompt, deleteTenantPrompt } from './db/tenants';
 import { getCompletionRates, getStepFunnel, getScoreDistribution } from './db/analytics';
+import { getIdleUsers, logReminder } from './db/reminders';
+import { sendTextMessage } from './whatsapp/sender';
 import { requireAuth, requireRole } from './middleware/auth';
 import {
   createJourneySchema,
@@ -90,6 +92,44 @@ app.get('/api/tenants', requireRole('super_admin'), async (req, res) => {
   try {
     const tenants = await listTenants();
     return res.json(tenants);
+  } catch (err) {
+    return res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+app.post('/api/reminders/send', requireRole('admin', 'super_admin'), async (req, res) => {
+  try {
+    const tenantId = (req.query.tenantId as string) ?? process.env.DEFAULT_TENANT_ID ?? '';
+    if (!tenantId) return res.status(400).json({ error: 'tenantId query param required' });
+
+    const idleUsers = await getIdleUsers(tenantId);
+    if (idleUsers.length === 0) {
+      return res.json({ sent: 0, skipped: 0 });
+    }
+
+    const token = await getTenantWhatsAppToken(tenantId);
+    const tenant = await getTenantById(tenantId);
+    if (!token || !tenant?.phone_number_id) {
+      return res.status(400).json({ error: 'WhatsApp credentials not configured for this tenant' });
+    }
+
+    const creds = { accessToken: token, phoneNumberId: tenant.phone_number_id };
+    let sent = 0;
+    let skipped = 0;
+
+    for (const user of idleUsers) {
+      try {
+        const message = `👋 Hey! You're in the middle of ${user.journey_title}. Ready to continue? Just reply here to pick up where you left off.`;
+        await sendTextMessage(user.whatsapp_number, message, creds);
+        await logReminder(tenantId, user.id);
+        sent++;
+      } catch (err) {
+        console.error(`Failed to send reminder to user ${user.id}:`, err);
+        skipped++;
+      }
+    }
+
+    return res.json({ sent, skipped });
   } catch (err) {
     return res.status(500).json({ error: (err as Error).message });
   }
