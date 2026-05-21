@@ -55,7 +55,9 @@ import { getNotificationConfig, upsertNotificationConfig } from './db/notificati
 import { listAlertRules, upsertAlertRule, deleteAlertRule } from './db/alertRules';
 import { notifyIdleUser } from './notifications/notify';
 import { deliverScheduledSteps } from './scheduler/deliverScheduled';
+import { evaluateAlerts } from './alerts/evaluateAlerts';
 import { handleInbound } from './engine/flowRouter';
+import cron from 'node-cron';
 import { WebAdapter } from './whatsapp/webAdapter';
 import {
   listCohorts,
@@ -1306,6 +1308,25 @@ function toCsv(data: any[]): string {
   );
   return [headers.join(','), ...rows].join('\n');
 }
+
+// Cron job: run every 15 minutes to deliver scheduled steps and evaluate alert rules
+cron.schedule('*/15 * * * *', async () => {
+  try {
+    const tenants = await listTenants();
+    console.log(`[cron] starting scheduled tasks for ${tenants.length} tenants`);
+
+    for (const tenant of tenants) {
+      try {
+        await deliverScheduledSteps(tenant.id);
+        await evaluateAlerts(tenant.id);
+      } catch (err) {
+        console.error(`[cron] failed for tenant ${tenant.id}:`, (err as Error).message);
+      }
+    }
+  } catch (err) {
+    console.error(`[cron] failed to list tenants:`, (err as Error).message);
+  }
+});
 
 // Session sweeper — expire idle sessions every 5 min (replaced by Redis TTL in T8.1).
 startSessionSweeper(async (s) => {

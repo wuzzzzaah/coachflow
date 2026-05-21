@@ -188,6 +188,7 @@ export const notificationConfigSchema = z.object({
   low_score_threshold: z.number().min(0).max(10),
   notify_idle_user: z.boolean(),
   resend_api_key: z.string().nullable().optional(),
+  slack_webhook_url: z.string().nullable().optional(),
   created_at: z.string().optional(),
   updated_at: z.string().optional(),
 });
@@ -201,6 +202,7 @@ export const alertRuleSchema = z.object({
   threshold: z.number().positive(),
   channel: z.enum(['slack', 'email']),
   enabled: z.boolean(),
+  last_fired_at: z.string().nullable().optional(),
   created_at: z.string(),
 });
 
