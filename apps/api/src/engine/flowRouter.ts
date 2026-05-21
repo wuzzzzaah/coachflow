@@ -1,11 +1,4 @@
-import { InboundMessage, ListSection } from '../whatsapp/types';
-import {
-  sendListMessage,
-  sendTextMessage,
-  sendMediaMessage,
-  markAsRead,
-  SenderCredentials,
-} from '../whatsapp/sender';
+import { InboundMessage, ListSection, IWhatsAppAdapter } from '@coachflow/shared';
 import {
   appendTurn,
   createSession,
@@ -60,9 +53,9 @@ function log(whatsappNumber: string, fields: Record<string, unknown>, message: s
 export async function handleInbound(
   msg: InboundMessage,
   tenantId: string,
-  senderCreds?: SenderCredentials,
+  adapter: IWhatsAppAdapter,
 ): Promise<void> {
-  markAsRead(msg.whatsappMessageId, senderCreds).catch(() => undefined);
+  adapter.markAsRead(msg.whatsappMessageId).catch(() => undefined);
 
   const first = await claimMessage(msg.whatsappMessageId).catch((err) => {
     console.error(`[flowRouter] claimMessage error: ${(err as Error).message}`);
@@ -106,16 +99,14 @@ export async function handleInbound(
 
   if (msg.kind === 'unsupported') {
     if (msg.unsupportedType === 'audio') {
-      await sendTextMessage(
+      await adapter.sendTextMessage(
         msg.whatsappNumber,
         "I can't process voice notes yet — please type your reply. (Voice transcription via Whisper or Deepgram will plug in here in production.)",
-        senderCreds,
       );
     } else {
-      await sendTextMessage(
+      await adapter.sendTextMessage(
         msg.whatsappNumber,
         'I can only process text messages for now. Please type your message.',
-        senderCreds,
       );
     }
     return;
@@ -128,16 +119,16 @@ export async function handleInbound(
   if (msg.kind === 'list' && msg.replyId) {
     if (await getJourney(tenantId, msg.replyId)) {
       const resolvedId = await getActiveVersionForUser(user.id, msg.replyId, tenantId);
-      await startJourney(session, resolvedId, tenantId, senderCreds);
+      await startJourney(session, resolvedId, tenantId, adapter);
       return;
     }
   }
 
-  if (await handleKeyword(session, inputText, tenantId, senderCreds)) return;
+  if (await handleKeyword(session, inputText, tenantId, adapter)) return;
 
   if (session.currentMode === 'onboarding') {
     await markOnboarded(user.id).catch(() => undefined);
-    await sendWelcome(session, tenantId, senderCreds);
+    await sendWelcome(session, tenantId, adapter);
     await updateSession(session.whatsappNumber, { currentMode: 'menu' });
     return;
   }
@@ -146,41 +137,40 @@ export async function handleInbound(
     const journeyId = msg.replyId ?? findJourneyByText(inputText, await listJourneys(tenantId));
     if (journeyId && (await getJourney(tenantId, journeyId))) {
       const resolvedId = await getActiveVersionForUser(user.id, journeyId, tenantId);
-      await startJourney(session, resolvedId, tenantId, senderCreds);
+      await startJourney(session, resolvedId, tenantId, adapter);
       return;
     }
-    await sendWelcome(session, tenantId, senderCreds);
+    await sendWelcome(session, tenantId, adapter);
     return;
   }
 
   if (session.currentMode === 'journey_complete') {
-    await sendTextMessage(
+    await adapter.sendTextMessage(
       msg.whatsappNumber,
       "You've completed this journey. Type MENU to choose another.",
-      senderCreds,
     );
     return;
   }
 
-  await runStepTurn(session, inputText, msg.whatsappMessageId, tenantId, senderCreds);
+  await runStepTurn(session, inputText, msg.whatsappMessageId, tenantId, adapter);
 }
 
 async function handleKeyword(
   session: Session,
   text: string,
   tenantId: string,
-  creds?: SenderCredentials,
+  adapter: IWhatsAppAdapter,
 ): Promise<boolean> {
   if (KEYWORDS.reset.test(text)) {
     if (session.currentSessionId) {
       await dbEndSession(session.currentSessionId, 'reset by user').catch(() => undefined);
     }
     await resetSession(session.whatsappNumber);
-    await sendWelcome(session, tenantId, creds);
+    await sendWelcome(session, tenantId, adapter);
     return true;
   }
   if (KEYWORDS.help.test(text)) {
-    await sendTextMessage(
+    await adapter.sendTextMessage(
       session.whatsappNumber,
       [
         '*Available keywords:*',
@@ -190,12 +180,11 @@ async function handleKeyword(
         'STOP — pause this conversation',
         'HELP — show this list',
       ].join('\n'),
-      creds,
     );
     return true;
   }
   if (KEYWORDS.progress.test(text)) {
-    await sendProgress(session, tenantId, creds);
+    await sendProgress(session, tenantId, adapter);
     return true;
   }
   if (KEYWORDS.stop.test(text)) {
@@ -203,10 +192,9 @@ async function handleKeyword(
       await dbEndSession(session.currentSessionId, 'paused by user').catch(() => undefined);
     }
     await updateSession(session.whatsappNumber, { currentMode: 'paused', currentSessionId: null });
-    await sendTextMessage(
+    await adapter.sendTextMessage(
       session.whatsappNumber,
       "Session paused. Type MENU when you're ready to continue.",
-      creds,
     );
     return true;
   }
@@ -217,11 +205,11 @@ async function handleKeyword(
     session.currentMode !== 'reflection' &&
     session.currentMode !== 'assessment'
   ) {
-    await sendWelcome(session, tenantId, creds);
+    await sendWelcome(session, tenantId, adapter);
     return true;
   }
   if (KEYWORDS.menu.test(text) && session.currentMode === 'paused') {
-    await sendWelcome(session, tenantId, creds);
+    await sendWelcome(session, tenantId, adapter);
     await updateSession(session.whatsappNumber, { currentMode: 'menu' });
     return true;
   }
@@ -231,14 +219,13 @@ async function handleKeyword(
 async function sendWelcome(
   session: Session,
   tenantId: string,
-  creds?: SenderCredentials,
+  adapter: IWhatsAppAdapter,
 ): Promise<void> {
   const journeys = await listJourneys(tenantId);
   if (journeys.length === 0) {
-    await sendTextMessage(
+    await adapter.sendTextMessage(
       session.whatsappNumber,
       'No programmes are available yet. Please check back soon.',
-      creds,
     );
     return;
   }
@@ -254,7 +241,7 @@ async function sendWelcome(
   ];
   const body =
     'Welcome to your AI leadership coach.\n\nChoose a journey below to begin. You can type MENU, PROGRESS, RESET, or HELP at any time.';
-  await sendListMessage(session.whatsappNumber, body, 'Pick a journey', sections, creds);
+  await adapter.sendListMessage(session.whatsappNumber, body, 'Pick a journey', sections);
 }
 
 function findJourneyByText(text: string, journeys: { id: string; title: string }[]): string | null {
@@ -269,14 +256,13 @@ async function startJourney(
   session: Session,
   journeyId: string,
   tenantId: string,
-  creds?: SenderCredentials,
+  adapter: IWhatsAppAdapter,
 ): Promise<void> {
   const journey = await getJourney(tenantId, journeyId);
   if (!journey) {
-    await sendTextMessage(
+    await adapter.sendTextMessage(
       session.whatsappNumber,
       "I couldn't find that journey. Type MENU to pick another.",
-      creds,
     );
     return;
   }
@@ -292,28 +278,26 @@ async function startJourney(
     turnCount: 0,
     stepStartedAt: new Date(),
   });
-  await sendTextMessage(
+  await adapter.sendTextMessage(
     session.whatsappNumber,
     `Starting *${journey.title}* — ${journey.estimatedDuration}.`,
-    creds,
   );
-  await beginStep(session.whatsappNumber, tenantId, creds);
+  await beginStep(session.whatsappNumber, tenantId, adapter);
 }
 
 async function beginStep(
   whatsappNumber: string,
   tenantId: string,
-  creds?: SenderCredentials,
+  adapter: IWhatsAppAdapter,
 ): Promise<void> {
   const session = await getSession(whatsappNumber);
   if (!session || !session.currentJourneyId) return;
   const resolvedJourneyId = await getActiveVersionForUser(session.userId, session.currentJourneyId, tenantId);
   const step = await getStep(tenantId, resolvedJourneyId, session.currentStepIndex);
   if (!step) {
-    await sendTextMessage(
+    await adapter.sendTextMessage(
       whatsappNumber,
       'You have completed every step in this journey. Type MENU to start another.',
-      creds,
     );
     await updateSession(whatsappNumber, {
       currentMode: 'journey_complete',
@@ -336,9 +320,9 @@ async function beginStep(
     stepStartedAt: new Date(),
   });
 
-  await sendTextMessage(whatsappNumber, step.openingMessage, creds);
+  await adapter.sendTextMessage(whatsappNumber, step.openingMessage);
   if (step.mediaUrl && step.mediaType) {
-    sendMediaMessage(whatsappNumber, step.mediaType, step.mediaUrl, undefined, creds).catch(
+    adapter.sendMediaMessage(whatsappNumber, step.mediaType, step.mediaUrl, undefined).catch(
       (err) => console.error(`[flowRouter] sendMediaMessage failed: ${err.message}`),
     );
   }
@@ -353,7 +337,7 @@ async function beginStep(
   log(whatsappNumber, { session_id: dbSessionId, step: step.id, mode: step.mode }, 'step started');
 
   if (step.mode === 'assessment') {
-    await runStepTurn(updated, '[generate final assessment]', undefined, tenantId, creds);
+    await runStepTurn(updated, '[generate final assessment]', undefined, tenantId, adapter);
   }
 }
 
@@ -362,11 +346,11 @@ async function runStepTurn(
   userText: string,
   whatsappMessageId: string | undefined,
   tenantId: string,
-  creds?: SenderCredentials,
+  adapter: IWhatsAppAdapter,
 ): Promise<void> {
   const session = (await getSession(sessionIn.whatsappNumber)) ?? sessionIn;
   if (!session.currentJourneyId || !session.currentSessionId) {
-    await sendWelcome(session, tenantId, creds);
+    await sendWelcome(session, tenantId, adapter);
     return;
   }
   const resolvedJourneyId = await getActiveVersionForUser(session.userId, session.currentJourneyId, tenantId);
@@ -408,7 +392,7 @@ async function runStepTurn(
   const meetsTurnGate = live.turnCount >= step.minTurns;
   const advancing = aiResponse.shouldAdvance && meetsTurnGate;
 
-  await sendTextMessage(session.whatsappNumber, aiResponse.message, creds);
+  await adapter.sendTextMessage(session.whatsappNumber, aiResponse.message);
   await appendTurn(session.whatsappNumber, { role: 'assistant', content: aiResponse.message });
   await logMessage({
     sessionId: session.currentSessionId,
@@ -434,7 +418,7 @@ async function runStepTurn(
       score: aiResponse.score.overall,
       dimensions: aiResponse.score.dimensions,
     });
-    await sendTextMessage(session.whatsappNumber, formatScoreCard(aiResponse.score), creds);
+    await adapter.sendTextMessage(session.whatsappNumber, formatScoreCard(aiResponse.score));
 
     const journey = await getJourney(tenantId, session.currentJourneyId);
     notifyLowScore(
@@ -458,7 +442,7 @@ async function runStepTurn(
   );
 
   if (advancing) {
-    await advanceStep(session, tenantId, creds);
+    await advanceStep(session, tenantId, adapter);
   }
 }
 
@@ -482,7 +466,7 @@ function formatScoreCard(score: NonNullable<AIResponse['score']>): string {
 async function sendScorecard(
   session: Session,
   journey: { title: string },
-  creds?: SenderCredentials,
+  adapter: IWhatsAppAdapter,
 ): Promise<void> {
   const scores = await getScoresForUser(session.userId, session.currentJourneyId!).catch(() => []);
   if (scores.length === 0) return;
@@ -523,13 +507,13 @@ async function sendScorecard(
   }
   lines.push('', summary, '', 'Well done! Type "start" to begin a new programme.');
 
-  await sendTextMessage(session.whatsappNumber, lines.join('\n'), creds);
+  await adapter.sendTextMessage(session.whatsappNumber, lines.join('\n'));
 }
 
 async function advanceStep(
   session: Session,
   tenantId: string,
-  creds?: SenderCredentials,
+  adapter: IWhatsAppAdapter,
 ): Promise<void> {
   if (!session.currentJourneyId || !session.currentSessionId) return;
   const resolvedJourneyId = await getActiveVersionForUser(session.userId, session.currentJourneyId, tenantId);
@@ -572,7 +556,7 @@ async function advanceStep(
       currentSessionId: null,
       currentStepIndex: nextIndex,
     });
-    await sendScorecard(session, journey, creds).catch((err) =>
+    await sendScorecard(session, journey, adapter).catch((err) =>
       console.error(`[flowRouter] sendScorecard failed: ${err.message}`),
     );
     return;
@@ -593,20 +577,19 @@ async function advanceStep(
     currentMode: 'step_complete',
     currentSessionId: null,
   });
-  await beginStep(session.whatsappNumber, tenantId, creds);
+  await beginStep(session.whatsappNumber, tenantId, adapter);
 }
 
 async function sendProgress(
   session: Session,
   tenantId: string,
-  creds?: SenderCredentials,
+  adapter: IWhatsAppAdapter,
 ): Promise<void> {
   const scores = await getScoresForUser(session.userId).catch(() => []);
   if (scores.length === 0) {
-    await sendTextMessage(
+    await adapter.sendTextMessage(
       session.whatsappNumber,
       'No scores yet — complete a journey to see your progress here.',
-      creds,
     );
     return;
   }
@@ -617,7 +600,7 @@ async function sendProgress(
     const date = new Date(r.created_at).toLocaleDateString();
     lines.push(`${journey?.title ?? r.journey_id} — ${r.score}/10 (${date})`);
   }
-  await sendTextMessage(session.whatsappNumber, lines.join('\n'), creds);
+  await adapter.sendTextMessage(session.whatsappNumber, lines.join('\n'));
 }
 
 /** Attempt to restore a session from the database for a returning user. */

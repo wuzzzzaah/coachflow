@@ -1,3 +1,5 @@
+import { InboundMessage, ButtonOption, ListSection } from '@coachflow/shared';
+
 /**
  * Meta WhatsApp Cloud API webhook payload types.
  * Only the subset we consume is modelled here.
@@ -60,24 +62,4 @@ export interface MetaWebhookPayload {
   }>;
 }
 
-/** Normalised inbound message that the engine consumes. */
-export interface InboundMessage {
-  whatsappNumber: string;
-  whatsappMessageId: string;
-  displayName?: string;
-  kind: 'text' | 'button' | 'list' | 'unsupported';
-  text?: string;
-  replyId?: string;
-  replyTitle?: string;
-  unsupportedType?: string;
-}
-
-export interface ButtonOption {
-  id: string;
-  title: string;
-}
-
-export interface ListSection {
-  title: string;
-  rows: Array<{ id: string; title: string; description?: string }>;
-}
+export { InboundMessage, ButtonOption, ListSection };

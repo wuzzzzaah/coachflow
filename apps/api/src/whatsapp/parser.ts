@@ -1,4 +1,5 @@
-import { MetaWebhookPayload, InboundMessage } from './types';
+import { InboundMessage } from '@coachflow/shared';
+import { MetaWebhookPayload } from './types';
 
 /**
  * Extract normalised inbound messages from a Meta webhook payload.
