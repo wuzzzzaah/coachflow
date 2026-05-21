@@ -122,6 +122,30 @@ export default function JourneyDetailsPage() {
     }
   };
 
+  const handleExportScorm = async () => {
+    if (!journey) return;
+    try {
+      const res = await apiFetch(`/api/journeys/${id}/export/scorm?tenantId=${tenantId}`, {
+        method: "POST",
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to export SCORM package");
+      }
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `journey-${journey.title.replace(/\s+/g, '-').toLowerCase()}-scorm.zip`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err: unknown) {
+      alert((err as Error).message);
+    }
+  };
+
   const handleToggleTemplate = async () => {
     if (!journey) return;
     const newValue = !journey.is_template;
@@ -341,6 +365,14 @@ export default function JourneyDetailsPage() {
               >
                 {journey.status === 'published' ? 'Unpublish' : 'Publish'}
               </button>
+              {journey.status === 'published' && (
+                <button
+                  className="px-4 py-2 rounded text-sm font-medium border border-blue-200 text-blue-600 hover:bg-blue-50"
+                  onClick={handleExportScorm}
+                >
+                  Export SCORM
+                </button>
+              )}
               <button
                 className={`px-4 py-2 rounded text-sm font-medium border ${
                   journey.is_template

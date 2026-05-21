@@ -29,6 +29,7 @@ import {
 } from './db/analytics';
 import { getActiveSessions, getStepDropOff, getStuckUsers } from './db/metrics';
 import { getIdleUsers, logReminder } from './db/reminders';
+import { generateScormPackage } from './export/scorm';
 import { eraseUser, exportUserData } from './db/gdpr';
 import { writeAuditLog, getAuditLog } from './db/auditLog';
 import { getNotificationConfig, upsertNotificationConfig } from './db/notifications';
@@ -167,6 +168,23 @@ app.get('/api/metrics/stuck', requireRole('admin', 'super_admin'), async (req, r
     return res.json(stuck);
   } catch (err) {
     return res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+// SCORM export
+app.post('/api/journeys/:id/export/scorm', requireRole('admin', 'super_admin'), async (req, res) => {
+  try {
+    const tenantId = (req.query.tenantId as string) ?? process.env.DEFAULT_TENANT_ID ?? '';
+    if (!tenantId) return res.status(400).json({ error: 'tenantId query param required' });
+
+    const zipBuffer = await generateScormPackage(tenantId, req.params.id);
+
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename="journey-${req.params.id}-scorm.zip"`);
+    return res.send(zipBuffer);
+  } catch (err) {
+    const status = (err as Error).message.includes('published') ? 400 : 500;
+    return res.status(status).json({ error: (err as Error).message });
   }
 });
 
