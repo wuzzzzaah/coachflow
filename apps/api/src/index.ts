@@ -68,6 +68,7 @@ import {
 } from './db/cohorts';
 import { sendTextMessage } from './whatsapp/sender';
 import { requireAuth, requireRole } from './middleware/auth';
+import { requireLearner } from './middleware/learnerAuth';
 import {
   createJourneySchema,
   updateJourneySchema,
@@ -132,12 +133,15 @@ app.get('/webhook/whatsapp', verifyWebhook);
 app.post('/webhook/whatsapp', verifySignature, receiveWebhook);
 
 // Web Channel endpoints
-app.post('/channel/web/receive', async (req, res) => {
+app.post('/channel/web/receive', requireLearner, async (req, res) => {
   try {
-    const { userId, text, tenantId } = req.body;
-    if (!userId || !text || !tenantId) {
-      return res.status(400).json({ error: 'userId, text, and tenantId are required' });
+    const { text } = req.body;
+    if (!text) {
+      return res.status(400).json({ error: 'text is required' });
     }
+
+    const userId = req.learner!.id;
+    const tenantId = req.learner!.tenantId;
 
     const adapter = new WebAdapter(tenantId, userId);
     // Web channel uses the userId as the "whatsappNumber" for session lookup
@@ -160,12 +164,17 @@ app.post('/channel/web/receive', async (req, res) => {
   }
 });
 
-app.get('/channel/web/poll/:userId', async (req, res) => {
+app.get('/channel/web/poll/:userId', requireLearner, async (req, res) => {
   try {
-    const tenantId = (req.query.tenantId as string) ?? process.env.DEFAULT_TENANT_ID ?? '';
-    if (!tenantId) return res.status(400).json({ error: 'tenantId query param required' });
+    const userId = req.learner!.id;
+    const tenantId = req.learner!.tenantId;
 
-    const messages = await pollAndClearWebMessages(tenantId, req.params.userId);
+    // Security: Ensure the polled userId matches the authenticated learnerId
+    if (req.params.userId !== userId) {
+      return res.status(403).json({ error: 'forbidden' });
+    }
+
+    const messages = await pollAndClearWebMessages(tenantId, userId);
     return res.json(messages.map((m) => m.content));
   } catch (err) {
     return res.status(500).json({ error: (err as Error).message });
