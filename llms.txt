@@ -4,19 +4,29 @@
 
 SignOutButton: Provides SignOutButton.
 page: Provides AnalyticsPage.
+page: Provides AuditLogPage.
+CohortDetailClientPage: Provides CohortDetailClientPage.
+page: Provides CohortDetailPage.
+CohortsClientPage: Provides CohortsClientPage.
+page: Provides CohortsPage.
 page: Provides JourneyDetailsPage.
 JourneysClientPage: Provides JourneysClientPage.
 page: Provides JourneysPage.
 layout: Provides AdminLayout.
+page: Provides NotificationsPage.
 page: Provides DashboardPage.
 page: Provides PromptsPage.
 TenantsClientPage: Provides TenantsClientPage.
 page: Provides TenantsPage.
 page: Provides UserProgressPage.
+page: Provides SessionTranscriptPage.
 page: Provides UsersPage.
+WebhooksClientPage: Provides WebhooksClientPage.
+page: Provides WebhooksPage.
 layout: Provides RootLayout.
 page: Provides LoginPage.
 api: Provides apiFetch.
+downloadCsv: Provides downloadCsv.
 client: Provides createClient.
 server: Provides createClient.
 geminiClient: Provides generate.
@@ -25,16 +35,33 @@ reflection:
 roleplay:
 scoring:
 system:
+analytics.test:
+gdpr.test:
 journeyLoader.test:
-analytics: Provides getCompletionRates, getStepFunnel, getScoreDistribution.
+journeyVersions.test:
+journeys.test:
+metrics.test:
+reminders.test:
+scores.test:
+analytics: Provides getCompletionRates, getStepFunnel, getScoreDistribution, getCohortCompletionRate, getCohortScoreDistribution, getCohortMemberProgress.
+auditLog: Provides writeAuditLog, getAuditLog.
+cohorts: Provides listCohorts, getCohort, createCohort, deleteCohort, addCohortMembers, removeCohortMember, getCohortProgress.
+export: Provides getUsersExportData, getUserExportData.
+gdpr: Provides eraseUser, exportUserData.
 journeyLoader: Provides listJourneys, getJourney, createJourney, updateJourney, deleteJourney, getStep.
 journeySteps: Provides createStep, updateStep, deleteStep, reorderSteps.
-journeys: Provides ensureUserJourney, advanceUserJourney, completeUserJourney.
-scores: Provides saveScore, getScoresForUser.
-sessions: Provides startSession, endSession, logMessage, getSessionMessages.
+journeyVersions: Provides snapshotJourney, getActiveVersionForUser, listJourneyVersions, getActiveUserCount.
+journeys: Provides ensureUserJourney, advanceUserJourney, completeUserJourney, listTemplates, cloneJourney.
+metrics: Provides getActiveSessions, getStepDropOff, getStuckUsers.
+notifications: Provides getNotificationConfig, getResendApiKey, upsertNotificationConfig.
+reminders: Provides getIdleUsers, logReminder.
+scheduler: Provides getScheduledJourneys, getEnrolledUsers, hasDeliveredToday, logDelivery.
+scores: Provides saveScore, getScoresForUser, getLatestScoreForStep.
+sessions: Provides startSession, endSession, logMessage, getSessionMessages, getLatestActiveSession, getSessionById, getUserSessions.
 supabaseClient: Provides supabase.
 tenants: Provides getTenantByPhoneNumberId, getTenantWhatsAppToken, getTenantPromptOverrides, listTenants, createTenant, getTenantById, updateTenant, setTenantWhatsAppToken, upsertTenantPrompt, deleteTenantPrompt.
 users: Provides upsertUser, updateUserProgress, markOnboarded, claimMessage, getUserByNumber, searchUsers, getUserProgress.
+webhooks: Provides listWebhooks, createWebhook, deleteWebhook, getEnabledWebhooksForEvent.
 contextBuilder.test:
 flowRouter.test:
 outputParser.test:
@@ -47,11 +74,19 @@ outputParser: Provides parseAIResponse.
 redisSessionStore: Defines RedisSessionStore.
 sessionManager: Provides configureSessionStore, getSession, createSession, updateSession, appendTurn, resetSession, deleteSession, activeSessionCount, startSessionSweeper, stopSessionSweeper.
 sessionStore:
+scorm.test:
+scorm: Provides generateScormPackage.
 index:
 auth: Provides requireAuth, requireRole.
+email: Provides sendEmail.
+notify: Provides notifyJourneyComplete, notifyLowScore, notifyIdleUser.
+deliverScheduled.test:
+deliverScheduled: Provides deliverScheduledSteps.
+deliver: Provides deliverEvent.
 parser.test:
+sender.test:
 parser: Provides parseWebhook.
-sender: Provides sendTextMessage, sendButtonMessage, sendListMessage, markAsRead.
+sender: Provides sendMediaMessage, sendTextMessage, sendButtonMessage, sendListMessage, markAsRead.
 types:
 webhook: Provides verifyWebhook, verifySignature, receiveWebhook.
 index:
@@ -64,19 +99,29 @@ index:
 
 - [SignOutButton](llms-full.txt#apps-admin-app-admin-signoutbutton-tsx):
 - [page](llms-full.txt#apps-admin-app-admin-analytics-page-tsx):
+- [page](llms-full.txt#apps-admin-app-admin-audit-log-page-tsx):
+- [CohortDetailClientPage](llms-full.txt#apps-admin-app-admin-cohorts-id-components-cohortdetailclientpage-tsx):
+- [page](llms-full.txt#apps-admin-app-admin-cohorts-id-page-tsx):
+- [CohortsClientPage](llms-full.txt#apps-admin-app-admin-cohorts-components-cohortsclientpage-tsx):
+- [page](llms-full.txt#apps-admin-app-admin-cohorts-page-tsx):
 - [page](llms-full.txt#apps-admin-app-admin-journeys-id-page-tsx):
 - [JourneysClientPage](llms-full.txt#apps-admin-app-admin-journeys-components-journeysclientpage-tsx):
 - [page](llms-full.txt#apps-admin-app-admin-journeys-page-tsx):
 - [layout](llms-full.txt#apps-admin-app-admin-layout-tsx):
+- [page](llms-full.txt#apps-admin-app-admin-notifications-page-tsx):
 - [page](llms-full.txt#apps-admin-app-admin-page-tsx):
 - [page](llms-full.txt#apps-admin-app-admin-prompts-page-tsx):
 - [TenantsClientPage](llms-full.txt#apps-admin-app-admin-tenants-components-tenantsclientpage-tsx):
 - [page](llms-full.txt#apps-admin-app-admin-tenants-page-tsx):
 - [page](llms-full.txt#apps-admin-app-admin-users-id-page-tsx):
+- [page](llms-full.txt#apps-admin-app-admin-users-id-sessions-sessionid-page-tsx):
 - [page](llms-full.txt#apps-admin-app-admin-users-page-tsx):
+- [WebhooksClientPage](llms-full.txt#apps-admin-app-admin-webhooks-components-webhooksclientpage-tsx):
+- [page](llms-full.txt#apps-admin-app-admin-webhooks-page-tsx):
 - [layout](llms-full.txt#apps-admin-app-layout-tsx):
 - [page](llms-full.txt#apps-admin-app-login-page-tsx):
 - [api](llms-full.txt#apps-admin-lib-api-ts):
+- [downloadCsv](llms-full.txt#apps-admin-lib-downloadcsv-ts):
 - [client](llms-full.txt#apps-admin-lib-supabase-client-ts):
 - [server](llms-full.txt#apps-admin-lib-supabase-server-ts):
 - [geminiClient](llms-full.txt#apps-api-src-ai-geminiclient-ts):
@@ -85,16 +130,33 @@ index:
 - [roleplay](llms-full.txt#apps-api-src-ai-prompts-roleplay-ts):
 - [scoring](llms-full.txt#apps-api-src-ai-prompts-scoring-ts):
 - [system](llms-full.txt#apps-api-src-ai-prompts-system-ts):
+- [analytics.test](llms-full.txt#apps-api-src-db-tests-analytics-test-ts):
+- [gdpr.test](llms-full.txt#apps-api-src-db-tests-gdpr-test-ts):
 - [journeyLoader.test](llms-full.txt#apps-api-src-db-tests-journeyloader-test-ts):
+- [journeyVersions.test](llms-full.txt#apps-api-src-db-tests-journeyversions-test-ts):
+- [journeys.test](llms-full.txt#apps-api-src-db-tests-journeys-test-ts):
+- [metrics.test](llms-full.txt#apps-api-src-db-tests-metrics-test-ts):
+- [reminders.test](llms-full.txt#apps-api-src-db-tests-reminders-test-ts):
+- [scores.test](llms-full.txt#apps-api-src-db-tests-scores-test-ts):
 - [analytics](llms-full.txt#apps-api-src-db-analytics-ts):
+- [auditLog](llms-full.txt#apps-api-src-db-auditlog-ts):
+- [cohorts](llms-full.txt#apps-api-src-db-cohorts-ts):
+- [export](llms-full.txt#apps-api-src-db-export-ts):
+- [gdpr](llms-full.txt#apps-api-src-db-gdpr-ts):
 - [journeyLoader](llms-full.txt#apps-api-src-db-journeyloader-ts):
 - [journeySteps](llms-full.txt#apps-api-src-db-journeysteps-ts):
+- [journeyVersions](llms-full.txt#apps-api-src-db-journeyversions-ts):
 - [journeys](llms-full.txt#apps-api-src-db-journeys-ts):
+- [metrics](llms-full.txt#apps-api-src-db-metrics-ts):
+- [notifications](llms-full.txt#apps-api-src-db-notifications-ts):
+- [reminders](llms-full.txt#apps-api-src-db-reminders-ts):
+- [scheduler](llms-full.txt#apps-api-src-db-scheduler-ts):
 - [scores](llms-full.txt#apps-api-src-db-scores-ts):
 - [sessions](llms-full.txt#apps-api-src-db-sessions-ts):
 - [supabaseClient](llms-full.txt#apps-api-src-db-supabaseclient-ts):
 - [tenants](llms-full.txt#apps-api-src-db-tenants-ts):
 - [users](llms-full.txt#apps-api-src-db-users-ts):
+- [webhooks](llms-full.txt#apps-api-src-db-webhooks-ts):
 - [contextBuilder.test](llms-full.txt#apps-api-src-engine-tests-contextbuilder-test-ts):
 - [flowRouter.test](llms-full.txt#apps-api-src-engine-tests-flowrouter-test-ts):
 - [outputParser.test](llms-full.txt#apps-api-src-engine-tests-outputparser-test-ts):
@@ -107,9 +169,17 @@ index:
 - [redisSessionStore](llms-full.txt#apps-api-src-engine-redissessionstore-ts):
 - [sessionManager](llms-full.txt#apps-api-src-engine-sessionmanager-ts):
 - [sessionStore](llms-full.txt#apps-api-src-engine-sessionstore-ts):
+- [scorm.test](llms-full.txt#apps-api-src-export-tests-scorm-test-ts):
+- [scorm](llms-full.txt#apps-api-src-export-scorm-ts):
 - [index](llms-full.txt#apps-api-src-index-ts):
 - [auth](llms-full.txt#apps-api-src-middleware-auth-ts):
+- [email](llms-full.txt#apps-api-src-notifications-email-ts):
+- [notify](llms-full.txt#apps-api-src-notifications-notify-ts):
+- [deliverScheduled.test](llms-full.txt#apps-api-src-scheduler-tests-deliverscheduled-test-ts):
+- [deliverScheduled](llms-full.txt#apps-api-src-scheduler-deliverscheduled-ts):
+- [deliver](llms-full.txt#apps-api-src-webhooks-deliver-ts):
 - [parser.test](llms-full.txt#apps-api-src-whatsapp-tests-parser-test-ts):
+- [sender.test](llms-full.txt#apps-api-src-whatsapp-tests-sender-test-ts):
 - [parser](llms-full.txt#apps-api-src-whatsapp-parser-ts):
 - [sender](llms-full.txt#apps-api-src-whatsapp-sender-ts):
 - [types](llms-full.txt#apps-api-src-whatsapp-types-ts):
