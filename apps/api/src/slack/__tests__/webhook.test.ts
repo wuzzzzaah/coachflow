@@ -13,15 +13,18 @@ describe('Slack Webhook', () => {
     process.env.SLACK_SIGNING_SECRET = 'test-secret';
   });
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   function mockReq(body: any, headers: any = {}) {
     return {
       body,
       headers,
       rawBody: Buffer.from(typeof body === 'string' ? body : JSON.stringify(body)),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any;
   }
 
   function mockRes() {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const res: any = {};
     res.status = vi.fn().mockReturnValue(res);
     res.json = vi.fn().mockReturnValue(res);
@@ -31,10 +34,13 @@ describe('Slack Webhook', () => {
   }
 
   it('rejects invalid signatures', async () => {
-    const req = mockReq({ type: 'url_verification' }, {
-      'x-slack-request-timestamp': Math.floor(Date.now() / 1000).toString(),
-      'x-slack-signature': 'v0=invalid',
-    });
+    const req = mockReq(
+      { type: 'url_verification' },
+      {
+        'x-slack-request-timestamp': Math.floor(Date.now() / 1000).toString(),
+        'x-slack-signature': 'v0=invalid',
+      },
+    );
     const res = mockRes();
 
     await receiveSlackWebhook(req, res);
@@ -90,6 +96,7 @@ describe('Slack Webhook', () => {
         provider: 'slack',
       }),
       expect.any(String),
+      expect.objectContaining({ sendTextMessage: expect.any(Function) }),
     );
   });
 });
