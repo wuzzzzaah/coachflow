@@ -58,3 +58,13 @@ export async function deleteAlertRule(tenantId: string, id: string): Promise<voi
 
   if (error) throw new Error(`Delete alert rule failed: ${error.message}`);
 }
+
+export async function markAlertFired(ruleId: string): Promise<void> {
+  const db = supabase();
+  const { error } = await db
+    .from('alert_rules')
+    .update({ last_fired_at: new Date().toISOString() })
+    .eq('id', ruleId);
+
+  if (error) throw new Error(`Mark alert fired failed: ${error.message}`);
+}

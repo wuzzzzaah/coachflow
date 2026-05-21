@@ -158,6 +158,31 @@ export interface TenantWebhook {
   created_at: string;
 }
 
+export interface AlertRule {
+  id: string;
+  tenant_id: string;
+  metric: 'drop_off' | 'idle_user' | 'low_score';
+  threshold: number;
+  channel: 'slack' | 'email';
+  enabled: boolean;
+  last_fired_at?: string | null;
+  created_at: string;
+}
+
+export interface NotificationConfig {
+  id?: string;
+  tenant_id: string;
+  email_to?: string | null;
+  notify_journey_complete: boolean;
+  notify_low_score: boolean;
+  low_score_threshold: number;
+  notify_idle_user: boolean;
+  resend_api_key?: string | null;
+  slack_webhook_url?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface AuditLog {
   id: string;
   tenant_id: string | null;
