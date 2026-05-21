@@ -24,6 +24,8 @@ page: Provides SessionTranscriptPage.
 page: Provides UsersPage.
 WebhooksClientPage: Provides WebhooksClientPage.
 page: Provides WebhooksPage.
+page: Provides AuthCallbackPage.
+page: Provides LearnerLoginPage.
 layout: Provides RootLayout.
 page: Provides LoginPage.
 api: Provides apiFetch.
@@ -82,6 +84,7 @@ scorm.test:
 scorm: Provides generateScormPackage.
 index:
 auth: Provides requireAuth, requireRole.
+learnerAuth: Provides requireLearner.
 email: Provides sendEmail.
 notify: Provides notifyJourneyComplete, notifyLowScore, notifyIdleUser.
 deliverScheduled.test:
@@ -130,6 +133,8 @@ index:
 - [page](llms-full.txt#apps-admin-app-admin-users-page-tsx):
 - [WebhooksClientPage](llms-full.txt#apps-admin-app-admin-webhooks-components-webhooksclientpage-tsx):
 - [page](llms-full.txt#apps-admin-app-admin-webhooks-page-tsx):
+- [page](llms-full.txt#apps-admin-app-learner-auth-callback-page-tsx):
+- [page](llms-full.txt#apps-admin-app-learner-login-page-tsx):
 - [layout](llms-full.txt#apps-admin-app-layout-tsx):
 - [page](llms-full.txt#apps-admin-app-login-page-tsx):
 - [api](llms-full.txt#apps-admin-lib-api-ts):
@@ -188,6 +193,7 @@ index:
 - [scorm](llms-full.txt#apps-api-src-export-scorm-ts):
 - [index](llms-full.txt#apps-api-src-index-ts):
 - [auth](llms-full.txt#apps-api-src-middleware-auth-ts):
+- [learnerAuth](llms-full.txt#apps-api-src-middleware-learnerauth-ts):
 - [email](llms-full.txt#apps-api-src-notifications-email-ts):
 - [notify](llms-full.txt#apps-api-src-notifications-notify-ts):
 - [deliverScheduled.test](llms-full.txt#apps-api-src-scheduler-tests-deliverscheduled-test-ts):
