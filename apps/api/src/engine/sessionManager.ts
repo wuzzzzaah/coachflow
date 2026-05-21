@@ -17,7 +17,7 @@ export async function createSession(params: {
   tenantId: string;
   userId: string;
   whatsappNumber: string;
-  provider?: 'whatsapp' | 'slack';
+  provider?: 'whatsapp' | 'slack' | 'web';
   initialMode?: FlowState;
 }): Promise<Session> {
   const now = new Date();
