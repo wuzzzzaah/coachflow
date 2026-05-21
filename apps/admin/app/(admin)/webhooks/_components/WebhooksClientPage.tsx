@@ -11,9 +11,11 @@ interface WebhooksClientPageProps {
 }
 
 const AVAILABLE_EVENTS = [
+  { id: 'user_created', label: 'User Created' },
   { id: 'first_message', label: 'First Message' },
   { id: 'step_completed', label: 'Step Completed' },
   { id: 'journey_completed', label: 'Journey Completed' },
+  { id: 'step_scored', label: 'Step Scored' },
 ]
 
 export default function WebhooksClientPage({ initialWebhooks, tenantId }: WebhooksClientPageProps) {
@@ -90,16 +92,46 @@ export default function WebhooksClientPage({ initialWebhooks, tenantId }: Webhoo
     }))
   }
 
+  const zapierUrl = `${process.env.NEXT_PUBLIC_API_URL || ''}/api/webhooks/test${tenantId ? `?tenantId=${tenantId}` : ''}`
+
   return (
     <div className="p-8 max-w-6xl mx-auto flex flex-col gap-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Webhooks</h1>
+        <div>
+          <h1 className="text-2xl font-bold">Webhooks</h1>
+          <p className="text-sm text-zinc-500 mt-1">
+            Standardized outbound events for Zapier and other integrations.
+          </p>
+        </div>
         <button
           onClick={() => setShowNewModal(true)}
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
         >
           <Plus size={16} /> Add Webhook
         </button>
+      </div>
+
+      <div className="p-4 rounded-lg border border-blue-200 bg-blue-50 dark:border-blue-900/30 dark:bg-blue-900/10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h3 className="text-sm font-semibold text-blue-900 dark:text-blue-400">Zapier Integration</h3>
+          <p className="text-xs text-blue-700 dark:text-blue-500 mt-1">
+            Use this polling URL in Zapier to fetch sample events during trigger setup.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <code className="px-2 py-1 bg-white dark:bg-zinc-900 border border-blue-200 dark:border-blue-900/50 rounded text-[10px] text-zinc-600 dark:text-zinc-400 break-all">
+            {zapierUrl}
+          </code>
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText(zapierUrl)
+              alert('Zapier URL copied to clipboard')
+            }}
+            className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors whitespace-nowrap"
+          >
+            Copy URL
+          </button>
+        </div>
       </div>
 
       <div className="overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">

@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import express, { Request, Response } from 'express';
 import cors from 'cors';
+import crypto from 'node:crypto';
 import { verifyWebhook, receiveWebhook, verifySignature } from './whatsapp/webhook';
 import {
   activeSessionCount,
@@ -189,6 +190,81 @@ app.post('/api/journeys/:id/export/scorm', requireRole('admin', 'super_admin'), 
     const status = (err as Error).message.includes('published') ? 400 : 500;
     return res.status(status).json({ error: (err as Error).message });
   }
+});
+
+// Zapier-compatible webhook test endpoint
+app.get('/api/webhooks/test', requireRole('admin', 'super_admin'), async (req, res) => {
+  const tenantId = (req.query.tenantId as string) ?? process.env.DEFAULT_TENANT_ID ?? '';
+
+  const samples = [
+    {
+      id: crypto.randomUUID(),
+      created_at: new Date().toISOString(),
+      type: 'user_created',
+      data: {
+        userId: 'user_01HRAJSB6...',
+        tenantId,
+        whatsappNumber: '447700900000',
+        displayName: 'John Doe',
+      },
+    },
+    {
+      id: crypto.randomUUID(),
+      created_at: new Date().toISOString(),
+      type: 'first_message',
+      data: {
+        userId: 'user_01HRAJSB6...',
+        tenantId,
+        whatsappNumber: '447700900000',
+      },
+    },
+    {
+      id: crypto.randomUUID(),
+      created_at: new Date().toISOString(),
+      type: 'step_completed',
+      data: {
+        userId: 'user_01HRAJSB6...',
+        tenantId,
+        journeyId: 'journey_leadership_1',
+        stepId: 'step_intro_0',
+      },
+    },
+    {
+      id: crypto.randomUUID(),
+      created_at: new Date().toISOString(),
+      type: 'journey_completed',
+      data: {
+        userId: 'user_01HRAJSB6...',
+        tenantId,
+        journeyId: 'journey_leadership_1',
+      },
+    },
+    {
+      id: crypto.randomUUID(),
+      created_at: new Date().toISOString(),
+      type: 'step_scored',
+      data: {
+        userId: 'user_01HRAJSB6...',
+        tenantId,
+        journeyId: 'journey_leadership_1',
+        stepId: 'step_assessment_1',
+        score: 8.5,
+        dimensions: [
+          { name: 'Active Listening', score: 9, feedback: 'Demonstrated exceptional focus.' },
+          { name: 'Clarity of Thought', score: 8, feedback: 'Articulated goals well.' },
+        ],
+      },
+    },
+  ];
+
+  // If type query param is provided, filter to that type.
+  // Zapier polling triggers can use this to get relevant samples.
+  const type = req.query.type as string;
+  if (type) {
+    return res.json(samples.filter((s) => s.type === type));
+  }
+
+  return res.json(samples);
 });
 
 app.get('/api/cohorts/:id/analytics', requireRole('admin'), async (req, res) => {
