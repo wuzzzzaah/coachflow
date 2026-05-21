@@ -31,6 +31,9 @@ describe('deliverScheduledSteps', () => {
       phone_number_id: 'phone-123',
       webhook_verify_token: null,
       whatsapp_token_secret_id: null,
+      slack_team_id: null,
+      slack_team_name: null,
+      slack_bot_token_secret_id: null,
       created_at: new Date().toISOString()
     });
   });

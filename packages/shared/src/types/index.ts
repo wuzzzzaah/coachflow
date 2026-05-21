@@ -103,6 +103,9 @@ export interface Tenant {
   phone_number_id: string | null;
   webhook_verify_token: string | null;
   whatsapp_token_secret_id: string | null;
+  slack_team_id: string | null;
+  slack_team_name: string | null;
+  slack_bot_token_secret_id: string | null;
   created_at: string;
 }
 
