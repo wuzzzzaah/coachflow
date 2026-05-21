@@ -13,6 +13,8 @@ export async function createStep(
     min_turns?: number;
     step_guidance?: string;
     scoring_criteria?: string[] | null;
+    media_url?: string | null;
+    media_type?: 'image' | 'document' | 'audio' | 'video' | null;
   }
 ): Promise<void> {
   const db = supabase();
@@ -27,6 +29,8 @@ export async function createStep(
     min_turns: stepData.min_turns ?? 0,
     step_guidance: stepData.step_guidance ?? '',
     scoring_criteria: stepData.scoring_criteria ?? null,
+    media_url: stepData.media_url ?? null,
+    media_type: stepData.media_type ?? null,
   });
 
   if (error) throw new Error(`Create step failed: ${error.message}`);
@@ -43,6 +47,8 @@ export async function updateStep(
     min_turns?: number;
     step_guidance?: string;
     scoring_criteria?: string[] | null;
+    media_url?: string | null;
+    media_type?: 'image' | 'document' | 'audio' | 'video' | null;
   }
 ): Promise<void> {
   const db = supabase();
@@ -53,6 +59,8 @@ export async function updateStep(
   if (stepData.min_turns !== undefined) updates.min_turns = stepData.min_turns;
   if (stepData.step_guidance !== undefined) updates.step_guidance = stepData.step_guidance;
   if (stepData.scoring_criteria !== undefined) updates.scoring_criteria = stepData.scoring_criteria;
+  if (stepData.media_url !== undefined) updates.media_url = stepData.media_url;
+  if (stepData.media_type !== undefined) updates.media_type = stepData.media_type;
 
   if (Object.keys(updates).length === 0) return;
 

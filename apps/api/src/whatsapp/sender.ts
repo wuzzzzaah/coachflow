@@ -53,6 +53,26 @@ function splitForWhatsApp(text: string): string[] {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+export async function sendMediaMessage(
+  to: string,
+  mediaType: 'image' | 'document' | 'audio' | 'video',
+  mediaUrl: string,
+  caption?: string,
+  creds?: SenderCredentials,
+): Promise<void> {
+  const body: any = {
+    messaging_product: 'whatsapp',
+    recipient_type: 'individual',
+    to,
+    type: mediaType,
+    [mediaType]: { link: mediaUrl },
+  };
+  if (caption && (mediaType === 'image' || mediaType === 'document' || mediaType === 'video')) {
+    body[mediaType].caption = caption;
+  }
+  await post(body, creds);
+}
+
 export async function sendTextMessage(
   to: string,
   text: string,

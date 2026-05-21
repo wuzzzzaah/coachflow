@@ -43,6 +43,8 @@ const sampleStep: JourneyStepRow = {
   branch_on_low_score: false,
   branch_score_threshold: null,
   branch_step_index: null,
+  media_url: null,
+  media_type: null,
 };
 
 function makeChain(data: unknown, error: unknown = null, count: number | null = null) {
@@ -78,28 +80,35 @@ describe('journeyVersions db helpers', () => {
       const fromSpy = vi.fn((table: string) => {
         if (table === 'journeys') {
           // 1. Fetch, 2. Insert, 3. Update version
-          const calls = fromSpy.mock.calls.filter(c => c[0] === 'journeys').length;
+          const calls = fromSpy.mock.calls.filter((c) => c[0] === 'journeys').length;
           if (calls === 1) return journeyChain;
           if (calls === 2) return insertChain;
           return updateChain;
         }
         if (table === 'journey_steps') {
           // 1. Fetch, 2. Insert
-          return fromSpy.mock.calls.filter(c => c[0] === 'journey_steps').length === 1 ? stepsChain : insertChain;
+          return fromSpy.mock.calls.filter((c) => c[0] === 'journey_steps').length === 1
+            ? stepsChain
+            : insertChain;
         }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return {} as any;
       });
 
-      vi.mocked(supabase).mockReturnValue({ from: fromSpy } as any);
+      vi.mocked(supabase).mockReturnValue({ from: fromSpy } as unknown as ReturnType<
+        typeof supabase
+      >);
 
       const snapshotId = await snapshotJourney(TENANT, JOURNEY_ID);
 
       expect(snapshotId).toBeDefined();
-      expect(insertChain.insert).toHaveBeenCalledWith(expect.objectContaining({
-        parent_journey_id: JOURNEY_ID,
-        version_number: 1,
-        status: 'draft'
-      }));
+      expect(insertChain.insert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          parent_journey_id: JOURNEY_ID,
+          version_number: 1,
+          status: 'draft',
+        }),
+      );
       expect(updateChain.update).toHaveBeenCalledWith({ version_number: 2 });
     });
   });
@@ -107,7 +116,9 @@ describe('journeyVersions db helpers', () => {
   describe('getActiveVersionForUser', () => {
     it('returns snapshot ID if user is pinned', async () => {
       const chain = makeChain({ journey_version_id: 'snapshot-id' });
-      vi.mocked(supabase).mockReturnValue({ from: vi.fn(() => chain) } as any);
+      vi.mocked(supabase).mockReturnValue({ from: vi.fn(() => chain) } as unknown as ReturnType<
+        typeof supabase
+      >);
 
       const result = await getActiveVersionForUser(USER_ID, JOURNEY_ID, TENANT);
       expect(result).toBe('snapshot-id');
@@ -116,7 +127,9 @@ describe('journeyVersions db helpers', () => {
 
     it('returns original journey ID if user not pinned', async () => {
       const chain = makeChain(null);
-      vi.mocked(supabase).mockReturnValue({ from: vi.fn(() => chain) } as any);
+      vi.mocked(supabase).mockReturnValue({ from: vi.fn(() => chain) } as unknown as ReturnType<
+        typeof supabase
+      >);
 
       const result = await getActiveVersionForUser(USER_ID, JOURNEY_ID, TENANT);
       expect(result).toBe(JOURNEY_ID);

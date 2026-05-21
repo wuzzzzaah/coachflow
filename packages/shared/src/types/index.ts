@@ -65,6 +65,8 @@ export interface JourneyStep {
   branchOnLowScore: boolean;
   branchScoreThreshold: number | null;
   branchStepIndex: number | null;
+  mediaUrl: string | null;
+  mediaType: 'image' | 'document' | 'audio' | 'video' | null;
 }
 
 export interface JourneyConfig {
@@ -133,6 +135,8 @@ export interface JourneyStepRow {
   branch_on_low_score: boolean;
   branch_score_threshold: number | null;
   branch_step_index: number | null;
+  media_url: string | null;
+  media_type: 'image' | 'document' | 'audio' | 'video' | null;
 }
 
 export interface JourneyPromptRow {
