@@ -1,9 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, type Mocked } from 'vitest';
 import axios from 'axios';
 import { sendMediaMessage } from '../sender';
 
 vi.mock('axios');
-const mockedAxios = axios as vi.Mocked<typeof axios>;
+const mockedAxios = axios as Mocked<typeof axios>;
 
 describe('WhatsApp Sender - sendMediaMessage', () => {
   beforeEach(() => {
@@ -29,14 +29,19 @@ describe('WhatsApp Sender - sendMediaMessage', () => {
           caption: 'Caption text',
         },
       },
-      expect.any(Object)
+      expect.any(Object),
     );
   });
 
   it('sends an audio message without caption (audio does not support captions)', async () => {
     mockedAxios.post.mockResolvedValueOnce({ data: {} });
 
-    await sendMediaMessage('123456789', 'audio', 'https://example.com/audio.mp3', 'Ignored caption');
+    await sendMediaMessage(
+      '123456789',
+      'audio',
+      'https://example.com/audio.mp3',
+      'Ignored caption',
+    );
 
     expect(mockedAxios.post).toHaveBeenCalledWith(
       'https://graph.facebook.com/v19.0/test-phone-id/messages',
@@ -49,7 +54,7 @@ describe('WhatsApp Sender - sendMediaMessage', () => {
           link: 'https://example.com/audio.mp3',
         },
       },
-      expect.any(Object)
+      expect.any(Object),
     );
   });
 
@@ -70,7 +75,7 @@ describe('WhatsApp Sender - sendMediaMessage', () => {
           caption: 'Worksheet',
         },
       },
-      expect.any(Object)
+      expect.any(Object),
     );
   });
 
@@ -91,7 +96,7 @@ describe('WhatsApp Sender - sendMediaMessage', () => {
           caption: 'Watch this',
         },
       },
-      expect.any(Object)
+      expect.any(Object),
     );
   });
 
@@ -109,7 +114,7 @@ describe('WhatsApp Sender - sendMediaMessage', () => {
           Authorization: 'Bearer custom-token',
           'Content-Type': 'application/json',
         },
-      }
+      },
     );
   });
 });
