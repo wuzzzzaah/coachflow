@@ -11,15 +11,31 @@ import {
 } from './engine/sessionManager';
 import { InMemorySessionStore } from './engine/inMemorySessionStore';
 import { RedisSessionStore } from './engine/redisSessionStore';
-import { listJourneys, getJourney, createJourney, updateJourney, deleteJourney } from './db/journeyLoader';
+import {
+  listJourneys,
+  getJourney,
+  createJourney,
+  updateJourney,
+  deleteJourney,
+} from './db/journeyLoader';
 import { listJourneyVersions, getActiveUserCount } from './db/journeyVersions';
 import { listTemplates, cloneJourney } from './db/journeys';
 import { createStep, updateStep, deleteStep, reorderSteps } from './db/journeySteps';
-import { getUserByNumber, searchUsers, getUserProgress, upsertUser } from './db/users';
+import { getUserByNumber, searchUsers, getUserProgress } from './db/users';
 import { getScoresForUser } from './db/scores';
 import { getUsersExportData, getUserExportData } from './db/export';
 import { getSessionMessages, getUserSessions, getSessionById } from './db/sessions';
-import { listTenants, createTenant, getTenantById, updateTenant, setTenantWhatsAppToken, getTenantWhatsAppToken, getTenantPromptOverrides, upsertTenantPrompt, deleteTenantPrompt } from './db/tenants';
+import {
+  listTenants,
+  createTenant,
+  getTenantById,
+  updateTenant,
+  setTenantWhatsAppToken,
+  getTenantWhatsAppToken,
+  getTenantPromptOverrides,
+  upsertTenantPrompt,
+  deleteTenantPrompt,
+} from './db/tenants';
 import { listWebhooks, createWebhook, deleteWebhook } from './db/webhooks';
 import {
   getCompletionRates,
@@ -129,7 +145,8 @@ app.post('/channel/web/receive', async (req, res) => {
       {
         whatsappNumber: userId,
         whatsappMessageId: crypto.randomUUID(),
-        kind: 'text',
+        kind: 'text' as const,
+        provider: 'web' as const,
         text,
       },
       tenantId,
@@ -200,17 +217,21 @@ app.get('/api/metrics/live', requireRole('admin', 'super_admin'), async (req, re
   }
 });
 
-app.get('/api/metrics/dropoff/:journeyId', requireRole('admin', 'super_admin'), async (req, res) => {
-  try {
-    const tenantId = (req.query.tenantId as string) ?? process.env.DEFAULT_TENANT_ID ?? '';
-    if (!tenantId) return res.status(400).json({ error: 'tenantId query param required' });
+app.get(
+  '/api/metrics/dropoff/:journeyId',
+  requireRole('admin', 'super_admin'),
+  async (req, res) => {
+    try {
+      const tenantId = (req.query.tenantId as string) ?? process.env.DEFAULT_TENANT_ID ?? '';
+      if (!tenantId) return res.status(400).json({ error: 'tenantId query param required' });
 
-    const dropoff = await getStepDropOff(tenantId, req.params.journeyId);
-    return res.json(dropoff);
-  } catch (err) {
-    return res.status(500).json({ error: (err as Error).message });
-  }
-});
+      const dropoff = await getStepDropOff(tenantId, req.params.journeyId);
+      return res.json(dropoff);
+    } catch (err) {
+      return res.status(500).json({ error: (err as Error).message });
+    }
+  },
+);
 
 app.get('/api/metrics/stuck', requireRole('admin', 'super_admin'), async (req, res) => {
   try {
@@ -226,21 +247,28 @@ app.get('/api/metrics/stuck', requireRole('admin', 'super_admin'), async (req, r
 });
 
 // SCORM export
-app.post('/api/journeys/:id/export/scorm', requireRole('admin', 'super_admin'), async (req, res) => {
-  try {
-    const tenantId = (req.query.tenantId as string) ?? process.env.DEFAULT_TENANT_ID ?? '';
-    if (!tenantId) return res.status(400).json({ error: 'tenantId query param required' });
+app.post(
+  '/api/journeys/:id/export/scorm',
+  requireRole('admin', 'super_admin'),
+  async (req, res) => {
+    try {
+      const tenantId = (req.query.tenantId as string) ?? process.env.DEFAULT_TENANT_ID ?? '';
+      if (!tenantId) return res.status(400).json({ error: 'tenantId query param required' });
 
-    const zipBuffer = await generateScormPackage(tenantId, req.params.id);
+      const zipBuffer = await generateScormPackage(tenantId, req.params.id);
 
-    res.setHeader('Content-Type', 'application/zip');
-    res.setHeader('Content-Disposition', `attachment; filename="journey-${req.params.id}-scorm.zip"`);
-    return res.send(zipBuffer);
-  } catch (err) {
-    const status = (err as Error).message.includes('published') ? 400 : 500;
-    return res.status(status).json({ error: (err as Error).message });
-  }
-});
+      res.setHeader('Content-Type', 'application/zip');
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="journey-${req.params.id}-scorm.zip"`,
+      );
+      return res.send(zipBuffer);
+    } catch (err) {
+      const status = (err as Error).message.includes('published') ? 400 : 500;
+      return res.status(status).json({ error: (err as Error).message });
+    }
+  },
+);
 
 // Zapier-compatible webhook test endpoint
 app.get('/api/webhooks/test', requireRole('admin', 'super_admin'), async (req, res) => {
@@ -375,17 +403,21 @@ app.get('/api/journeys/:id/versions', requireRole('admin', 'super_admin'), async
   }
 });
 
-app.get('/api/journeys/:id/active-user-count', requireRole('admin', 'super_admin'), async (req, res) => {
-  try {
-    const tenantId = (req.query.tenantId as string) ?? process.env.DEFAULT_TENANT_ID ?? '';
-    if (!tenantId) return res.status(400).json({ error: 'tenantId query param required' });
+app.get(
+  '/api/journeys/:id/active-user-count',
+  requireRole('admin', 'super_admin'),
+  async (req, res) => {
+    try {
+      const tenantId = (req.query.tenantId as string) ?? process.env.DEFAULT_TENANT_ID ?? '';
+      if (!tenantId) return res.status(400).json({ error: 'tenantId query param required' });
 
-    const count = await getActiveUserCount(tenantId, req.params.id);
-    return res.json({ count });
-  } catch (err) {
-    return res.status(500).json({ error: (err as Error).message });
-  }
-});
+      const count = await getActiveUserCount(tenantId, req.params.id);
+      return res.json({ count });
+    } catch (err) {
+      return res.status(500).json({ error: (err as Error).message });
+    }
+  },
+);
 
 // Notification Config APIs
 app.get('/api/notifications/config', requireRole('admin'), async (req, res) => {
@@ -732,14 +764,18 @@ app.get('/api/users/:id/sessions', requireRole('admin', 'super_admin'), async (r
   }
 });
 
-app.get('/api/users/:id/sessions/:sessionId/messages', requireRole('admin', 'super_admin'), async (req, res) => {
-  try {
-    const messages = await getSessionMessages(req.params.sessionId);
-    return res.json(messages);
-  } catch (err) {
-    return res.status(500).json({ error: (err as Error).message });
-  }
-});
+app.get(
+  '/api/users/:id/sessions/:sessionId/messages',
+  requireRole('admin', 'super_admin'),
+  async (req, res) => {
+    try {
+      const messages = await getSessionMessages(req.params.sessionId);
+      return res.json(messages);
+    } catch (err) {
+      return res.status(500).json({ error: (err as Error).message });
+    }
+  },
+);
 
 app.get('/api/sessions/:id', requireRole('admin', 'super_admin'), async (req, res) => {
   try {
@@ -873,6 +909,7 @@ app.get('/api/journeys', async (req, res) => {
     let includeDrafts = false;
 
     if (includeAll) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const user = (req as any).user;
       const role = user?.['https://coachflow.ai/role'] || user?.app_metadata?.role;
       if (role === 'admin' || role === 'super_admin') {
@@ -906,7 +943,8 @@ app.post('/api/journeys', requireRole('admin'), async (req, res) => {
     const tenantId = (req.query.tenantId as string) ?? process.env.DEFAULT_TENANT_ID ?? '';
     if (!tenantId) return res.status(400).json({ error: 'tenantId query param required' });
     const parsed = createJourneySchema.safeParse(req.body);
-    if (!parsed.success) return res.status(400).json({ error: 'Invalid body', details: parsed.error.issues });
+    if (!parsed.success)
+      return res.status(400).json({ error: 'Invalid body', details: parsed.error.issues });
 
     await createJourney(tenantId, parsed.data);
 
@@ -944,7 +982,8 @@ app.patch('/api/journeys/:id', requireRole('admin'), async (req, res) => {
     const tenantId = (req.query.tenantId as string) ?? process.env.DEFAULT_TENANT_ID ?? '';
     if (!tenantId) return res.status(400).json({ error: 'tenantId query param required' });
     const parsed = updateJourneySchema.safeParse(req.body);
-    if (!parsed.success) return res.status(400).json({ error: 'Invalid body', details: parsed.error.issues });
+    if (!parsed.success)
+      return res.status(400).json({ error: 'Invalid body', details: parsed.error.issues });
 
     const existing = await getJourney(tenantId, req.params.id);
     if (!existing) return res.status(404).json({ error: 'not_found' });
@@ -1021,7 +1060,8 @@ app.post('/api/journeys/:id/steps', requireRole('admin'), async (req, res) => {
     const tenantId = (req.query.tenantId as string) ?? process.env.DEFAULT_TENANT_ID ?? '';
     if (!tenantId) return res.status(400).json({ error: 'tenantId query param required' });
     const parsed = createJourneyStepSchema.safeParse(req.body);
-    if (!parsed.success) return res.status(400).json({ error: 'Invalid body', details: parsed.error.issues });
+    if (!parsed.success)
+      return res.status(400).json({ error: 'Invalid body', details: parsed.error.issues });
 
     const existing = await getJourney(tenantId, req.params.id);
     if (!existing) return res.status(404).json({ error: 'journey not_found' });
@@ -1038,7 +1078,8 @@ app.patch('/api/journeys/:id/steps/:stepId', requireRole('admin'), async (req, r
     const tenantId = (req.query.tenantId as string) ?? process.env.DEFAULT_TENANT_ID ?? '';
     if (!tenantId) return res.status(400).json({ error: 'tenantId query param required' });
     const parsed = updateJourneyStepSchema.safeParse(req.body);
-    if (!parsed.success) return res.status(400).json({ error: 'Invalid body', details: parsed.error.issues });
+    if (!parsed.success)
+      return res.status(400).json({ error: 'Invalid body', details: parsed.error.issues });
 
     // Validations to ensure journey exists skipped for brevity, could be added.
     await updateStep(tenantId, req.params.id, req.params.stepId, parsed.data);
@@ -1065,7 +1106,8 @@ app.put('/api/journeys/:id/steps/reorder', requireRole('admin'), async (req, res
     const tenantId = (req.query.tenantId as string) ?? process.env.DEFAULT_TENANT_ID ?? '';
     if (!tenantId) return res.status(400).json({ error: 'tenantId query param required' });
     const parsed = reorderStepsSchema.safeParse(req.body);
-    if (!parsed.success) return res.status(400).json({ error: 'Invalid body', details: parsed.error.issues });
+    if (!parsed.success)
+      return res.status(400).json({ error: 'Invalid body', details: parsed.error.issues });
 
     await reorderSteps(tenantId, req.params.id, parsed.data.order);
     return res.json({ status: 'reordered' });
@@ -1218,41 +1260,49 @@ app.put('/api/tenants/:id/prompts/:key', requireRole('admin', 'super_admin'), as
   }
 });
 
-app.delete('/api/tenants/:id/prompts/:key', requireRole('admin', 'super_admin'), async (req, res) => {
-  try {
-    const keyResult = promptKeySchema.safeParse(req.params.key);
-    if (!keyResult.success) {
-      return res.status(400).json({ error: 'invalid_prompt_key' });
+app.delete(
+  '/api/tenants/:id/prompts/:key',
+  requireRole('admin', 'super_admin'),
+  async (req, res) => {
+    try {
+      const keyResult = promptKeySchema.safeParse(req.params.key);
+      if (!keyResult.success) {
+        return res.status(400).json({ error: 'invalid_prompt_key' });
+      }
+      await deleteTenantPrompt(req.params.id, keyResult.data);
+
+      writeAuditLog({
+        tenantId: req.params.id,
+        actorId: req.user!.id,
+        actorEmail: req.user!.email,
+        action: 'prompt.delete',
+        resource: 'prompt',
+        resourceId: `${req.params.id}:${keyResult.data}`,
+        metadata: { key: keyResult.data },
+      });
+
+      return res.json({ success: true });
+    } catch (err) {
+      return res.status(500).json({ error: (err as Error).message });
     }
-    await deleteTenantPrompt(req.params.id, keyResult.data);
-
-    writeAuditLog({
-      tenantId: req.params.id,
-      actorId: req.user!.id,
-      actorEmail: req.user!.email,
-      action: 'prompt.delete',
-      resource: 'prompt',
-      resourceId: `${req.params.id}:${keyResult.data}`,
-      metadata: { key: keyResult.data },
-    });
-
-    return res.json({ success: true });
-  } catch (err) {
-    return res.status(500).json({ error: (err as Error).message });
-  }
-});
+  },
+);
 
 /** Simple JSON to CSV converter helper. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function toCsv(data: any[]): string {
   if (data.length === 0) return '';
   const headers = Object.keys(data[0]);
-  const rows = data.map(obj =>
-    headers.map(header => {
-      let val = (obj as any)[header];
-      if (val === null || val === undefined) val = '';
-      const stringVal = String(val).replace(/"/g, '""');
-      return `"${stringVal}"`;
-    }).join(',')
+  const rows = data.map((obj) =>
+    headers
+      .map((header) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        let val = (obj as any)[header];
+        if (val === null || val === undefined) val = '';
+        const stringVal = String(val).replace(/"/g, '""');
+        return `"${stringVal}"`;
+      })
+      .join(','),
   );
   return [headers.join(','), ...rows].join('\n');
 }

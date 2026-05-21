@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import { Request, Response } from 'express';
 import { handleInbound } from '../engine/flowRouter';
 import { InboundMessage } from '@coachflow/shared';
+import { SlackAdapter } from './slackAdapter';
 
 /**
  * Verify Slack request signature.
@@ -83,7 +84,7 @@ export async function receiveSlackWebhook(req: Request, res: Response): Promise<
       };
 
       const tenantId = process.env.DEFAULT_TENANT_ID ?? 'default';
-      await handleInbound(msg, tenantId).catch((err) => {
+      await handleInbound(msg, tenantId, new SlackAdapter()).catch((err) => {
         console.error(`[slack] handleInbound failed: ${err.message}`);
       });
     }
@@ -106,7 +107,7 @@ export async function receiveSlackWebhook(req: Request, res: Response): Promise<
       };
 
       const tenantId = process.env.DEFAULT_TENANT_ID ?? 'default';
-      await handleInbound(msg, tenantId).catch((err) => {
+      await handleInbound(msg, tenantId, new SlackAdapter()).catch((err) => {
         console.error(`[slack] handleInbound interactive failed: ${err.message}`);
       });
     }
