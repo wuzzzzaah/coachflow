@@ -3,6 +3,10 @@
 > Multi-tenant WhatsApp coaching platform
 
 SignOutButton: Provides SignOutButton.
+DropOffFunnel: Provides DropOffFunnel.
+LiveMetrics: Provides LiveMetrics.
+StuckUserList: Provides StuckUserList.
+page: Provides LiveTelemetryPage.
 page: Provides AnalyticsPage.
 page: Provides AuditLogPage.
 CohortDetailClientPage: Provides CohortDetailClientPage.
@@ -17,6 +21,7 @@ page: Provides NotificationsPage.
 page: Provides DashboardPage.
 page: Provides PromptsPage.
 page: Provides AlertRulesPage.
+page: Provides SlackSettingsPage.
 TenantsClientPage: Provides TenantsClientPage.
 page: Provides TenantsPage.
 page: Provides UserProgressPage.
@@ -24,6 +29,18 @@ page: Provides SessionTranscriptPage.
 page: Provides UsersPage.
 WebhooksClientPage: Provides WebhooksClientPage.
 page: Provides WebhooksPage.
+page: Provides AuthCallbackPage.
+ChatWindow: Provides ChatWindow.
+JourneyPicker: Provides JourneyPicker.
+MessageInput: Provides MessageInput.
+useChat: Provides useChat.
+actions: Provides enrollInJourney.
+page: Provides ChatPage.
+layout: Provides LearnerLayout.
+page: Provides LearnerLoginPage.
+ScoreHistory: Provides ScoreHistory.
+StepProgress: Provides StepProgress.
+page: Provides ProgressPage.
 layout: Provides RootLayout.
 page: Provides LoginPage.
 api: Provides apiFetch.
@@ -36,6 +53,8 @@ reflection:
 roleplay:
 scoring:
 system:
+evaluateAlerts.test:
+evaluateAlerts: Provides evaluateAlerts.
 analytics.test:
 gdpr.test:
 journeyLoader.test:
@@ -44,7 +63,7 @@ journeys.test:
 metrics.test:
 reminders.test:
 scores.test:
-alertRules: Provides listAlertRules, upsertAlertRule, deleteAlertRule.
+alertRules: Provides listAlertRules, upsertAlertRule, deleteAlertRule, markAlertFired.
 analytics: Provides getCompletionRates, getStepFunnel, getScoreDistribution, getCohortCompletionRate, getCohortScoreDistribution, getCohortMemberProgress.
 auditLog: Provides writeAuditLog, getAuditLog.
 cohorts: Provides listCohorts, getCohort, createCohort, deleteCohort, addCohortMembers, removeCohortMember, getCohortProgress.
@@ -55,14 +74,14 @@ journeySteps: Provides createStep, updateStep, deleteStep, reorderSteps.
 journeyVersions: Provides snapshotJourney, getActiveVersionForUser, listJourneyVersions, getActiveUserCount.
 journeys: Provides ensureUserJourney, advanceUserJourney, completeUserJourney, listTemplates, cloneJourney.
 metrics: Provides getActiveSessions, getStepDropOff, getStuckUsers.
-notifications: Provides getNotificationConfig, getResendApiKey, upsertNotificationConfig.
+notifications: Provides getNotificationConfig, getResendApiKey, getSlackWebhookUrl, upsertNotificationConfig.
 reminders: Provides getIdleUsers, logReminder.
 scheduler: Provides getScheduledJourneys, getEnrolledUsers, hasDeliveredToday, logDelivery.
 scores: Provides saveScore, getScoresForUser, getLatestScoreForStep.
 sessions: Provides startSession, endSession, logMessage, getSessionMessages, getLatestActiveSession, getSessionById, getUserSessions.
 supabaseClient: Provides supabase.
-tenants: Provides getTenantByPhoneNumberId, getTenantWhatsAppToken, getTenantPromptOverrides, listTenants, createTenant, getTenantById, updateTenant, setTenantWhatsAppToken, upsertTenantPrompt, deleteTenantPrompt.
-users: Provides upsertUser, updateUserProgress, markOnboarded, claimMessage, getUserByNumber, searchUsers, getUserProgress.
+tenants: Provides getTenantByPhoneNumberId, getTenantWhatsAppToken, getTenantPromptOverrides, listTenants, createTenant, getTenantById, updateTenant, setTenantWhatsAppToken, getTenantSlackToken, setTenantSlackToken, clearTenantSlackToken, upsertTenantPrompt, deleteTenantPrompt.
+users: Provides upsertUser, updateUserProgress, markOnboarded, claimMessage, getUserByNumber, getUserById, searchUsers, getUserProgress.
 webMessages: Provides storeOutboundWebMessage, pollAndClearWebMessages.
 webhooks: Provides listWebhooks, createWebhook, deleteWebhook, getEnabledWebhooksForEvent.
 contextBuilder.test:
@@ -82,6 +101,7 @@ scorm.test:
 scorm: Provides generateScormPackage.
 index:
 auth: Provides requireAuth, requireRole.
+learnerAuth: Provides requireLearner.
 email: Provides sendEmail.
 notify: Provides notifyJourneyComplete, notifyLowScore, notifyIdleUser.
 deliverScheduled.test:
@@ -109,6 +129,10 @@ index:
 ## Modules
 
 - [SignOutButton](llms-full.txt#apps-admin-app-admin-signoutbutton-tsx):
+- [DropOffFunnel](llms-full.txt#apps-admin-app-admin-analytics-live-components-dropofffunnel-tsx):
+- [LiveMetrics](llms-full.txt#apps-admin-app-admin-analytics-live-components-livemetrics-tsx):
+- [StuckUserList](llms-full.txt#apps-admin-app-admin-analytics-live-components-stuckuserlist-tsx):
+- [page](llms-full.txt#apps-admin-app-admin-analytics-live-page-tsx):
 - [page](llms-full.txt#apps-admin-app-admin-analytics-page-tsx):
 - [page](llms-full.txt#apps-admin-app-admin-audit-log-page-tsx):
 - [CohortDetailClientPage](llms-full.txt#apps-admin-app-admin-cohorts-id-components-cohortdetailclientpage-tsx):
@@ -123,6 +147,7 @@ index:
 - [page](llms-full.txt#apps-admin-app-admin-page-tsx):
 - [page](llms-full.txt#apps-admin-app-admin-prompts-page-tsx):
 - [page](llms-full.txt#apps-admin-app-admin-settings-alerts-page-tsx):
+- [page](llms-full.txt#apps-admin-app-admin-settings-slack-page-tsx):
 - [TenantsClientPage](llms-full.txt#apps-admin-app-admin-tenants-components-tenantsclientpage-tsx):
 - [page](llms-full.txt#apps-admin-app-admin-tenants-page-tsx):
 - [page](llms-full.txt#apps-admin-app-admin-users-id-page-tsx):
@@ -130,6 +155,18 @@ index:
 - [page](llms-full.txt#apps-admin-app-admin-users-page-tsx):
 - [WebhooksClientPage](llms-full.txt#apps-admin-app-admin-webhooks-components-webhooksclientpage-tsx):
 - [page](llms-full.txt#apps-admin-app-admin-webhooks-page-tsx):
+- [page](llms-full.txt#apps-admin-app-learner-auth-callback-page-tsx):
+- [ChatWindow](llms-full.txt#apps-admin-app-learner-chat-components-chatwindow-tsx):
+- [JourneyPicker](llms-full.txt#apps-admin-app-learner-chat-components-journeypicker-tsx):
+- [MessageInput](llms-full.txt#apps-admin-app-learner-chat-components-messageinput-tsx):
+- [useChat](llms-full.txt#apps-admin-app-learner-chat-components-usechat-ts):
+- [actions](llms-full.txt#apps-admin-app-learner-chat-actions-ts):
+- [page](llms-full.txt#apps-admin-app-learner-chat-page-tsx):
+- [layout](llms-full.txt#apps-admin-app-learner-layout-tsx):
+- [page](llms-full.txt#apps-admin-app-learner-login-page-tsx):
+- [ScoreHistory](llms-full.txt#apps-admin-app-learner-progress-components-scorehistory-tsx):
+- [StepProgress](llms-full.txt#apps-admin-app-learner-progress-components-stepprogress-tsx):
+- [page](llms-full.txt#apps-admin-app-learner-progress-page-tsx):
 - [layout](llms-full.txt#apps-admin-app-layout-tsx):
 - [page](llms-full.txt#apps-admin-app-login-page-tsx):
 - [api](llms-full.txt#apps-admin-lib-api-ts):
@@ -142,6 +179,8 @@ index:
 - [roleplay](llms-full.txt#apps-api-src-ai-prompts-roleplay-ts):
 - [scoring](llms-full.txt#apps-api-src-ai-prompts-scoring-ts):
 - [system](llms-full.txt#apps-api-src-ai-prompts-system-ts):
+- [evaluateAlerts.test](llms-full.txt#apps-api-src-alerts-tests-evaluatealerts-test-ts):
+- [evaluateAlerts](llms-full.txt#apps-api-src-alerts-evaluatealerts-ts):
 - [analytics.test](llms-full.txt#apps-api-src-db-tests-analytics-test-ts):
 - [gdpr.test](llms-full.txt#apps-api-src-db-tests-gdpr-test-ts):
 - [journeyLoader.test](llms-full.txt#apps-api-src-db-tests-journeyloader-test-ts):
@@ -188,6 +227,7 @@ index:
 - [scorm](llms-full.txt#apps-api-src-export-scorm-ts):
 - [index](llms-full.txt#apps-api-src-index-ts):
 - [auth](llms-full.txt#apps-api-src-middleware-auth-ts):
+- [learnerAuth](llms-full.txt#apps-api-src-middleware-learnerauth-ts):
 - [email](llms-full.txt#apps-api-src-notifications-email-ts):
 - [notify](llms-full.txt#apps-api-src-notifications-notify-ts):
 - [deliverScheduled.test](llms-full.txt#apps-api-src-scheduler-tests-deliverscheduled-test-ts):
