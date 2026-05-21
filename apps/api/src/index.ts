@@ -27,6 +27,7 @@ import {
   getCohortMemberProgress,
 } from './db/analytics';
 import { getIdleUsers, logReminder } from './db/reminders';
+import { eraseUser, exportUserData } from './db/gdpr';
 import { writeAuditLog, getAuditLog } from './db/auditLog';
 import { getNotificationConfig, upsertNotificationConfig } from './db/notifications';
 import { notifyIdleUser } from './notifications/notify';
@@ -134,6 +135,34 @@ app.get('/api/cohorts/:id/analytics', requireRole('admin'), async (req, res) => 
     ]);
 
     return res.json({ completionRate, scoreDistribution, memberProgress });
+  } catch (err) {
+    return res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+// GDPR compliance APIs
+app.delete('/api/users/:id', requireRole('admin'), async (req, res) => {
+  try {
+    const tenantId = (req.query.tenantId as string) ?? process.env.DEFAULT_TENANT_ID ?? '';
+    if (!tenantId) return res.status(400).json({ error: 'tenantId query param required' });
+
+    await eraseUser(req.params.id, tenantId, req.user!.id, req.user!.email || '');
+    return res.status(204).send();
+  } catch (err) {
+    return res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+app.get('/api/users/:id/data-export', requireRole('admin'), async (req, res) => {
+  try {
+    const tenantId = (req.query.tenantId as string) ?? process.env.DEFAULT_TENANT_ID ?? '';
+    if (!tenantId) return res.status(400).json({ error: 'tenantId query param required' });
+
+    const data = await exportUserData(req.params.id, tenantId);
+
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename="user-data-${req.params.id}.json"`);
+    return res.json(data);
   } catch (err) {
     return res.status(500).json({ error: (err as Error).message });
   }
