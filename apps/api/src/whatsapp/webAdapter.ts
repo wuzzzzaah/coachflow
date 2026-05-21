@@ -1,15 +1,34 @@
-import {
-  IWhatsAppAdapter,
-  ButtonOption,
-  ListSection,
-} from '@coachflow/shared';
+import { IWhatsAppAdapter, ButtonOption, ListSection, InboundMessage } from '@coachflow/shared';
+import crypto from 'node:crypto';
 import { storeOutboundWebMessage } from '../db/webMessages';
 
 export class WebAdapter implements IWhatsAppAdapter {
-  constructor(private tenantId: string, private userId: string) {}
+  constructor(
+    private tenantId: string,
+    private userId: string,
+  ) {}
+
+  static parseInbound(body: {
+    userId: string;
+    text?: string;
+    kind?: string;
+    replyId?: string;
+  }): InboundMessage {
+    return {
+      whatsappNumber: body.userId,
+      whatsappMessageId: crypto.randomUUID(),
+      kind: (body.kind as 'text' | 'button' | 'list' | 'unsupported') ?? 'text',
+      provider: 'web',
+      text: body.text,
+      replyId: body.replyId,
+    };
+  }
 
   async sendTextMessage(to: string, text: string): Promise<void> {
-    await storeOutboundWebMessage(this.tenantId, this.userId, { type: 'text', text: { body: text } });
+    await storeOutboundWebMessage(this.tenantId, this.userId, {
+      type: 'text',
+      text: { body: text },
+    });
   }
 
   async sendMediaMessage(
@@ -59,7 +78,7 @@ export class WebAdapter implements IWhatsAppAdapter {
     });
   }
 
-  async markAsRead(messageId: string): Promise<void> {
+  async markAsRead(_messageId: string): Promise<void> {
     // No-op for web channel
   }
 }
