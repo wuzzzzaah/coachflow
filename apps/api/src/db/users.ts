@@ -88,6 +88,17 @@ export async function getUserByNumber(whatsappNumber: string): Promise<UserRecor
   return (data as UserRecord) ?? null;
 }
 
+export async function getUserById(userId: string): Promise<UserRecord | null> {
+  const db = supabase();
+  const { data, error } = await db
+    .from('users')
+    .select('*')
+    .eq('id', userId)
+    .maybeSingle();
+  if (error) throw new Error(`Get user failed: ${error.message}`);
+  return (data as UserRecord) ?? null;
+}
+
 export async function searchUsers(tenantId: string, query?: string) {
   const db = supabase();
   let qb = db
