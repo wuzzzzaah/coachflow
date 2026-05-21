@@ -9,6 +9,7 @@ import {
   activeSessionCount,
   startSessionSweeper,
   configureSessionStore,
+  deleteSession,
 } from './engine/sessionManager';
 import { InMemorySessionStore } from './engine/inMemorySessionStore';
 import { RedisSessionStore } from './engine/redisSessionStore';
@@ -20,6 +21,7 @@ import {
   deleteJourney,
 } from './db/journeyLoader';
 import { listJourneyVersions, getActiveUserCount } from './db/journeyVersions';
+import { supabase } from './db/supabaseClient';
 import { listTemplates, cloneJourney } from './db/journeys';
 import { createStep, updateStep, deleteStep, reorderSteps } from './db/journeySteps';
 import { getUserByNumber, searchUsers, getUserProgress, getUserById } from './db/users';
@@ -1436,6 +1438,37 @@ startSessionSweeper(async (s) => {
     }),
   );
 });
+
+// ── Demo helpers (only active in development) ─────────────────────────────────
+if (process.env.NODE_ENV !== 'production') {
+  /**
+   * POST /api/demo/reset?userId=<id>
+   * Clears the in-memory session and resets current_journey_id for a user so
+   * you can replay the journey from the start during a live demo.
+   */
+  app.post('/api/demo/reset', async (req: Request, res: Response) => {
+    const { userId } = req.query as { userId?: string };
+    if (!userId) return res.status(400).json({ error: 'userId query param required' });
+
+    const tenantId = process.env.DEFAULT_TENANT_ID ?? 'default';
+    try {
+      // Clear in-memory session
+      await deleteSession(userId);
+
+      // Reset the user's current journey in DB so the journey picker shows again
+      const db = supabase();
+      await db
+        .from('users')
+        .update({ current_journey_id: null, current_step_index: 0 })
+        .eq('whatsapp_number', userId)
+        .eq('tenant_id', tenantId);
+
+      return res.json({ ok: true, message: `Session reset for user ${userId}` });
+    } catch (err) {
+      return res.status(500).json({ error: (err as Error).message });
+    }
+  });
+}
 
 const port = Number(process.env.PORT ?? 3000);
 app.listen(port, () => {
