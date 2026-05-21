@@ -32,9 +32,16 @@ export async function getResendApiKey(tenantId: string): Promise<string | null> 
   return data as string | null;
 }
 
+export async function getSlackWebhookUrl(tenantId: string): Promise<string | null> {
+  const db = supabase();
+  const { data, error } = await db.rpc('get_tenant_slack_webhook_url', { p_tenant_id: tenantId });
+  if (error) throw new Error(`Get Slack webhook URL failed: ${error.message}`);
+  return data as string | null;
+}
+
 export async function upsertNotificationConfig(
   tenantId: string,
-  config: Partial<NotificationConfig>
+  config: Partial<NotificationConfig>,
 ): Promise<NotificationConfig> {
   const db = supabase();
 
@@ -47,9 +54,25 @@ export async function upsertNotificationConfig(
     if (rpcError) throw new Error(`Set Resend API key failed: ${rpcError.message}`);
   }
 
+  // Handle the Slack webhook URL separately via Vault RPC if provided
+  if (config.slack_webhook_url) {
+    const { error: rpcError } = await db.rpc('set_tenant_slack_webhook_url', {
+      p_tenant_id: tenantId,
+      p_url: config.slack_webhook_url,
+    });
+    if (rpcError) throw new Error(`Set Slack webhook URL failed: ${rpcError.message}`);
+  }
+
   // Upsert the rest of the config. We use a surgical update or insert to avoid
   // wiping out the resend_api_key_secret_id.
-  const { resend_api_key, id, created_at, ...rest } = config;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const {
+    resend_api_key: _rak,
+    slack_webhook_url: _swu,
+    id: _id,
+    created_at: _ca,
+    ...rest
+  } = config;
   const payload = {
     ...rest,
     tenant_id: tenantId,
@@ -73,11 +96,7 @@ export async function upsertNotificationConfig(
     if (error) throw new Error(`Update notification config failed: ${error.message}`);
     result = data;
   } else {
-    const { data, error } = await db
-      .from('notification_configs')
-      .insert(payload)
-      .select()
-      .single();
+    const { data, error } = await db.from('notification_configs').insert(payload).select().single();
     if (error) throw new Error(`Insert notification config failed: ${error.message}`);
     result = data;
   }
