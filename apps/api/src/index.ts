@@ -27,6 +27,7 @@ import {
   getCohortScoreDistribution,
   getCohortMemberProgress,
 } from './db/analytics';
+import { getActiveSessions, getStepDropOff, getStuckUsers } from './db/metrics';
 import { getIdleUsers, logReminder } from './db/reminders';
 import { eraseUser, exportUserData } from './db/gdpr';
 import { writeAuditLog, getAuditLog } from './db/auditLog';
@@ -119,6 +120,51 @@ app.get('/api/tenants', requireRole('super_admin'), async (req, res) => {
   try {
     const tenants = await listTenants();
     return res.json(tenants);
+  } catch (err) {
+    return res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+// Operational metrics APIs
+app.get('/api/metrics/live', requireRole('admin', 'super_admin'), async (req, res) => {
+  try {
+    const tenantId = (req.query.tenantId as string) ?? process.env.DEFAULT_TENANT_ID ?? '';
+    if (!tenantId) return res.status(400).json({ error: 'tenantId query param required' });
+
+    const [activeSessions, stuckUsersData] = await Promise.all([
+      getActiveSessions(tenantId),
+      getStuckUsers(tenantId),
+    ]);
+
+    return res.json({
+      activeSessions,
+      stuckUsers: stuckUsersData.length,
+    });
+  } catch (err) {
+    return res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+app.get('/api/metrics/dropoff/:journeyId', requireRole('admin', 'super_admin'), async (req, res) => {
+  try {
+    const tenantId = (req.query.tenantId as string) ?? process.env.DEFAULT_TENANT_ID ?? '';
+    if (!tenantId) return res.status(400).json({ error: 'tenantId query param required' });
+
+    const dropoff = await getStepDropOff(tenantId, req.params.journeyId);
+    return res.json(dropoff);
+  } catch (err) {
+    return res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+app.get('/api/metrics/stuck', requireRole('admin', 'super_admin'), async (req, res) => {
+  try {
+    const tenantId = (req.query.tenantId as string) ?? process.env.DEFAULT_TENANT_ID ?? '';
+    if (!tenantId) return res.status(400).json({ error: 'tenantId query param required' });
+
+    const thresholdHours = req.query.threshold ? parseInt(req.query.threshold as string, 10) : 24;
+    const stuck = await getStuckUsers(tenantId, thresholdHours);
+    return res.json(stuck);
   } catch (err) {
     return res.status(500).json({ error: (err as Error).message });
   }
