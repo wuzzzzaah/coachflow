@@ -9,6 +9,7 @@ export interface LearnerContext {
 }
 
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
     interface Request {
       learner?: LearnerContext;
@@ -22,7 +23,11 @@ declare global {
  * Attaches req.learner and req.tenantId on success; returns 401/403 on failure.
  * Also handles auto-linking of learner_id for existing user records matched by email.
  */
-export async function requireLearner(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function requireLearner(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith('Bearer ')) {
     res.status(401).json({ error: 'missing_token' });
@@ -31,7 +36,10 @@ export async function requireLearner(req: Request, res: Response, next: NextFunc
 
   const token = authHeader.slice(7);
   const db = supabase();
-  const { data: { user: authUser }, error } = await db.auth.getUser(token);
+  const {
+    data: { user: authUser },
+    error,
+  } = await db.auth.getUser(token);
 
   if (error || !authUser) {
     res.status(401).json({ error: 'invalid_token' });
@@ -83,14 +91,15 @@ export async function requireLearner(req: Request, res: Response, next: NextFunc
 
       if (updateError) {
         // Handle race condition if learner_id was set by another request
-        if (updateError.code === '23505') { // unique violation
-           const { data: retryUser } = await db
+        if (updateError.code === '23505') {
+          // unique violation
+          const { data: retryUser } = await db
             .from('users')
             .select('id, tenant_id, learner_id, email')
             .eq('learner_id', authUser.id)
             .eq('tenant_id', tenantId)
             .maybeSingle();
-           user = retryUser;
+          user = retryUser;
         } else {
           res.status(500).json({ error: updateError.message });
           return;
@@ -101,9 +110,44 @@ export async function requireLearner(req: Request, res: Response, next: NextFunc
     }
   }
 
+  // 3. No existing record — auto-provision for web/anonymous users.
+  //    whatsapp_number is the legacy unique key; use a synthetic value for web users.
   if (!user) {
-    res.status(403).json({ error: 'not_a_registered_learner' });
-    return;
+    const syntheticNumber = `web:${authUser.id}`;
+    const { data: newUser, error: insertError } = await db
+      .from('users')
+      .insert({
+        whatsapp_number: syntheticNumber,
+        display_name: authUser.email ?? 'Guest',
+        tenant_id: tenantId,
+        learner_id: authUser.id,
+        email: authUser.email ?? null,
+      })
+      .select('id, tenant_id, learner_id, email')
+      .single();
+
+    if (insertError) {
+      // Could be a race-condition duplicate — try fetching again
+      if (insertError.code === '23505') {
+        const { data: existingUser } = await db
+          .from('users')
+          .select('id, tenant_id, learner_id, email')
+          .eq('learner_id', authUser.id)
+          .eq('tenant_id', tenantId)
+          .maybeSingle();
+        if (existingUser) {
+          user = existingUser;
+        } else {
+          res.status(500).json({ error: 'user_provision_failed' });
+          return;
+        }
+      } else {
+        res.status(500).json({ error: insertError.message });
+        return;
+      }
+    } else {
+      user = newUser;
+    }
   }
 
   req.learner = {

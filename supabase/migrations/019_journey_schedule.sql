@@ -9,7 +9,7 @@ create table scheduled_deliveries (
   id          uuid primary key default gen_random_uuid(),
   tenant_id   uuid not null references tenants(id) on delete cascade,
   user_id     uuid not null references users(id)   on delete cascade,
-  journey_id  uuid not null references journeys(id) on delete cascade,
+  journey_id  text not null references journeys(id) on delete cascade,
   step_index  int  not null,
   delivered_at timestamptz not null default now()
 );

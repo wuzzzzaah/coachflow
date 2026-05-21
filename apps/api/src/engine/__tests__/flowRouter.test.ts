@@ -51,7 +51,9 @@ vi.mock('../../db/journeyLoader', () => ({
 }));
 
 vi.mock('../../db/journeyVersions', () => ({
-  getActiveVersionForUser: vi.fn().mockImplementation((_userId, journeyId) => Promise.resolve(journeyId)),
+  getActiveVersionForUser: vi
+    .fn()
+    .mockImplementation((_userId, journeyId) => Promise.resolve(journeyId)),
   snapshotJourney: vi.fn(),
   getActiveUserCount: vi.fn(),
   listJourneyVersions: vi.fn(),
@@ -83,6 +85,7 @@ import { InMemorySessionStore } from '../inMemorySessionStore';
 import { WhatsAppAdapter } from '../../whatsapp/whatsappAdapter';
 import { claimMessage, upsertUser } from '../../db/users';
 import { listJourneys, getJourney, getStep } from '../../db/journeyLoader';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { getActiveVersionForUser } from '../../db/journeyVersions';
 import { getLatestActiveSession, getSessionMessages } from '../../db/sessions';
 import { generate } from '../../ai/geminiClient';
@@ -175,6 +178,7 @@ function firstMessage(fixture: MetaWebhookPayload) {
 const adapter = new WhatsAppAdapter();
 const sendTextMessage = vi.spyOn(adapter, 'sendTextMessage');
 const sendListMessage = vi.spyOn(adapter, 'sendListMessage');
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const sendMediaMessage = vi.spyOn(adapter, 'sendMediaMessage');
 
 describe('handleInbound — first message triggers onboarding', () => {
@@ -210,7 +214,12 @@ describe('handleInbound — conditional branching', () => {
       branchScoreThreshold: 7,
       branchStepIndex: 5,
     };
-    const remedialStep = { ...SAMPLE_STEP, id: 'step-remedial', index: 5, openingMessage: 'Remedial' };
+    const remedialStep = {
+      ...SAMPLE_STEP,
+      id: 'step-remedial',
+      index: 5,
+      openingMessage: 'Remedial',
+    };
 
     vi.mocked(getStep)
       .mockResolvedValueOnce(branchingStep) // runStepTurn
@@ -222,12 +231,17 @@ describe('handleInbound — conditional branching', () => {
       JSON.stringify({ message: 'Low score turn', intent: 'advance', shouldAdvance: true }),
     );
 
-    await handleInbound({
-      whatsappNumber: startMsg.whatsappNumber,
-      whatsappMessageId: 'wamid.branch001',
-      kind: 'text' as const, provider: 'whatsapp',
-      text: 'I did my best',
-    }, TENANT, adapter);
+    await handleInbound(
+      {
+        whatsappNumber: startMsg.whatsappNumber,
+        whatsappMessageId: 'wamid.branch001',
+        kind: 'text' as const,
+        provider: 'whatsapp',
+        text: 'I did my best',
+      },
+      TENANT,
+      adapter,
+    );
 
     expect(sendTextMessage).toHaveBeenCalledWith(startMsg.whatsappNumber, 'Remedial');
   });
@@ -258,12 +272,17 @@ describe('handleInbound — conditional branching', () => {
       JSON.stringify({ message: 'High score turn', intent: 'advance', shouldAdvance: true }),
     );
 
-    await handleInbound({
-      whatsappNumber: startMsg.whatsappNumber,
-      whatsappMessageId: 'wamid.nobranch001',
-      kind: 'text' as const, provider: 'whatsapp',
-      text: 'I did great',
-    }, TENANT, adapter);
+    await handleInbound(
+      {
+        whatsappNumber: startMsg.whatsappNumber,
+        whatsappMessageId: 'wamid.nobranch001',
+        kind: 'text' as const,
+        provider: 'whatsapp',
+        text: 'I did great',
+      },
+      TENANT,
+      adapter,
+    );
 
     expect(sendTextMessage).toHaveBeenCalledWith(startMsg.whatsappNumber, 'Step 2');
   });
@@ -298,20 +317,28 @@ describe('handleInbound — journey completion scorecard', () => {
     vi.mocked(getScoresForUser).mockResolvedValue([
       {
         score: 8,
-        criteria: [{ name: 'Empathy', score: 9 }, { name: 'Communication', score: 7 }],
+        criteria: [
+          { name: 'Empathy', score: 9 },
+          { name: 'Communication', score: 7 },
+        ],
         feedback: 'Great summary here.\n\nDevelopment focus: Listening',
       },
       {
         score: 9,
-        criteria: [{ name: 'Empathy', score: 9 }, { name: 'Communication', score: 9 }],
+        criteria: [
+          { name: 'Empathy', score: 9 },
+          { name: 'Communication', score: 9 },
+        ],
         feedback: 'Good work.',
-      }
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ] as any);
 
     const followMsg = {
       whatsappNumber: startMsg.whatsappNumber,
       whatsappMessageId: 'wamid.comp001',
-      kind: 'text' as const, provider: 'whatsapp' as const,
+      kind: 'text' as const,
+      provider: 'whatsapp' as const,
       text: 'I am done',
     };
 
@@ -325,15 +352,15 @@ describe('handleInbound — journey completion scorecard', () => {
     );
     expect(sendTextMessage).toHaveBeenCalledWith(
       startMsg.whatsappNumber,
-      expect.stringContaining("overall score: 8.5 / 10"),
+      expect.stringContaining('overall score: 8.5 / 10'),
     );
     expect(sendTextMessage).toHaveBeenCalledWith(
       startMsg.whatsappNumber,
-      expect.stringContaining("Empathy — 9/10"),
+      expect.stringContaining('Empathy — 9/10'),
     );
     expect(sendTextMessage).toHaveBeenCalledWith(
       startMsg.whatsappNumber,
-      expect.stringContaining("Great summary here."),
+      expect.stringContaining('Great summary here.'),
     );
   });
 });
@@ -347,7 +374,8 @@ describe('handleInbound — idle state handling', () => {
     const msg = {
       whatsappNumber: '14155550001',
       whatsappMessageId: 'wamid.idle001',
-      kind: 'text' as const, provider: 'whatsapp' as const,
+      kind: 'text' as const,
+      provider: 'whatsapp' as const,
       text: 'What can you do?',
     };
     await handleInbound(msg, TENANT, adapter);
@@ -362,7 +390,8 @@ describe('handleInbound — idle state handling', () => {
     const msg = {
       whatsappNumber: '14155550001',
       whatsappMessageId: 'wamid.start001',
-      kind: 'text' as const, provider: 'whatsapp' as const,
+      kind: 'text' as const,
+      provider: 'whatsapp' as const,
       text: 'START',
     };
     await handleInbound(msg, TENANT, adapter);
@@ -374,7 +403,8 @@ describe('handleInbound — idle state handling', () => {
     const msg = {
       whatsappNumber: '14155550001',
       whatsappMessageId: 'wamid.none001',
-      kind: 'text' as const, provider: 'whatsapp' as const,
+      kind: 'text' as const,
+      provider: 'whatsapp' as const,
       text: 'hi',
     };
     await handleInbound(msg, TENANT, adapter);
@@ -395,12 +425,14 @@ describe('handleInbound — session restoration', () => {
       journey_id: 'journey-1',
       mode: 'coaching',
       ended_at: null,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
 
     const msg = {
       whatsappNumber: user.whatsapp_number,
       whatsappMessageId: 'wamid.switch001',
-      kind: 'list' as const, provider: 'whatsapp' as const,
+      kind: 'list' as const,
+      provider: 'whatsapp' as const,
       replyId: 'maritime-leadership-001',
       text: 'Switching',
     };
@@ -426,16 +458,19 @@ describe('handleInbound — session restoration', () => {
       journey_id: 'journey-1',
       mode: 'coaching',
       ended_at: null,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
     vi.mocked(getSessionMessages).mockResolvedValue([
       { role: 'assistant', content: 'Hello!' },
       { role: 'user', content: 'Hi there' },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ] as any);
 
     const msg = {
       whatsappNumber: user.whatsapp_number,
       whatsappMessageId: 'wamid.resume001',
-      kind: 'text' as const, provider: 'whatsapp' as const,
+      kind: 'text' as const,
+      provider: 'whatsapp' as const,
       text: 'Continued thought',
     };
 
@@ -483,7 +518,8 @@ describe('handleInbound — coaching turn', () => {
     const coachMsg = {
       whatsappNumber: msg.whatsappNumber,
       whatsappMessageId: 'wamid.follow001',
-      kind: 'text' as const, provider: 'whatsapp' as const,
+      kind: 'text' as const,
+      provider: 'whatsapp' as const,
       text: 'I reflect on leadership daily',
     };
     await handleInbound(coachMsg, TENANT, adapter);
@@ -515,7 +551,8 @@ describe('handleInbound — step advancement', () => {
     const followMsg = {
       whatsappNumber: startMsg.whatsappNumber,
       whatsappMessageId: 'wamid.adv001',
-      kind: 'text' as const, provider: 'whatsapp' as const,
+      kind: 'text' as const,
+      provider: 'whatsapp' as const,
       text: 'I am ready',
     };
     await handleInbound(followMsg, TENANT, adapter);
@@ -558,5 +595,56 @@ describe('handleInbound — assessment + score storage', () => {
       startMsg.whatsappNumber,
       expect.stringContaining('Leadership'),
     );
+  });
+});
+
+describe('handleInbound — list reply journey selection (fix: before empty-text guard)', () => {
+  /**
+   * Before the fix, journey selection sent via a list message (kind='list',
+   * replyId='<journeyId>', no text) was silently dropped because the empty-text
+   * guard `if (!inputText) return` fired first.
+   *
+   * After the fix the list check runs before the guard so selection works.
+   */
+  it('enrolls the user when a list reply arrives with no text body', async () => {
+    const { startSession } = await import('../../db/sessions');
+
+    // Simulate a user in 'menu' mode waiting for a journey selection
+    const listMsg = {
+      whatsappNumber: '14155550001',
+      whatsappMessageId: 'wamid.list001',
+      kind: 'list' as const,
+      provider: 'whatsapp' as const,
+      text: undefined,
+      replyId: SAMPLE_JOURNEY.id,
+    };
+
+    // getJourney must confirm the replyId is a real journey
+    vi.mocked(getJourney).mockResolvedValue(SAMPLE_JOURNEY);
+    vi.mocked(getStep).mockResolvedValue(SAMPLE_STEP);
+
+    await handleInbound(listMsg, TENANT, adapter);
+
+    // A session should have been started (startJourney calls startSession)
+    expect(startSession).toHaveBeenCalled();
+  });
+
+  it('does not start a journey when list replyId is not a known journey', async () => {
+    const { startSession } = await import('../../db/sessions');
+
+    const listMsg = {
+      whatsappNumber: '14155550002',
+      whatsappMessageId: 'wamid.list002',
+      kind: 'list' as const,
+      provider: 'whatsapp' as const,
+      text: undefined,
+      replyId: 'non-existent-journey',
+    };
+
+    vi.mocked(getJourney).mockResolvedValue(null);
+
+    await handleInbound(listMsg, TENANT, adapter);
+
+    expect(startSession).not.toHaveBeenCalled();
   });
 });
