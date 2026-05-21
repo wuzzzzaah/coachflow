@@ -25,6 +25,7 @@ export function parseWebhook(payload: MetaWebhookPayload): InboundMessage[] {
             whatsappMessageId: msg.id,
             displayName,
             kind: 'text',
+            provider: 'whatsapp',
             text: msg.text.body,
           });
         } else if (msg.type === 'interactive') {
@@ -35,6 +36,7 @@ export function parseWebhook(payload: MetaWebhookPayload): InboundMessage[] {
               whatsappMessageId: msg.id,
               displayName,
               kind: 'button',
+              provider: 'whatsapp',
               replyId: ir.button_reply.id,
               replyTitle: ir.button_reply.title,
               text: ir.button_reply.title,
@@ -45,6 +47,7 @@ export function parseWebhook(payload: MetaWebhookPayload): InboundMessage[] {
               whatsappMessageId: msg.id,
               displayName,
               kind: 'list',
+              provider: 'whatsapp',
               replyId: ir.list_reply.id,
               replyTitle: ir.list_reply.title,
               text: ir.list_reply.title,
@@ -56,6 +59,7 @@ export function parseWebhook(payload: MetaWebhookPayload): InboundMessage[] {
             whatsappMessageId: msg.id,
             displayName,
             kind: 'unsupported',
+            provider: 'whatsapp',
             unsupportedType: msg.type,
           });
         }

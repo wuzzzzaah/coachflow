@@ -42,6 +42,7 @@ export interface Session {
   tenantId: string;
   userId: string;
   whatsappNumber: string;
+  provider: 'whatsapp' | 'slack';
   currentJourneyId: string | null;
   currentStepIndex: number;
   currentMode: FlowState;
@@ -169,7 +170,50 @@ export interface AuditLog {
   created_at: string;
 }
 
+/** Normalised inbound message that the engine consumes. */
+export interface InboundMessage {
+  whatsappNumber: string;
+  whatsappMessageId: string;
+  displayName?: string;
+  kind: 'text' | 'button' | 'list' | 'unsupported';
+  provider: 'whatsapp' | 'slack';
+  text?: string;
+  replyId?: string;
+  replyTitle?: string;
+  unsupportedType?: string;
+}
+
+export interface ButtonOption {
+  id: string;
+  title: string;
+}
+
+export interface ListSection {
+  title: string;
+  rows: Array<{ id: string; title: string; description?: string }>;
+}
+
 // ── Adapter interfaces ────────────────────────────────────────────────────────
+
+export interface IWhatsAppAdapter {
+  sendTextMessage(to: string, text: string, creds?: any): Promise<void>;
+  sendButtonMessage(to: string, body: string, buttons: ButtonOption[], creds?: any): Promise<void>;
+  sendListMessage(
+    to: string,
+    body: string,
+    buttonLabel: string,
+    sections: ListSection[],
+    creds?: any
+  ): Promise<void>;
+  sendMediaMessage(
+    to: string,
+    mediaType: 'image' | 'document' | 'audio' | 'video',
+    mediaUrl: string,
+    caption?: string,
+    creds?: any
+  ): Promise<void>;
+  markAsRead(messageId: string, creds?: any): Promise<void>;
+}
 
 export interface ISessionStore {
   get(whatsappNumber: string): Promise<Session | null>;

@@ -3,6 +3,7 @@ import crypto from 'node:crypto';
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import { verifyWebhook, receiveWebhook, verifySignature } from './whatsapp/webhook';
+import { receiveSlackWebhook } from './slack/webhook';
 import {
   activeSessionCount,
   startSessionSweeper,
@@ -84,6 +85,9 @@ configureSessionStore(store);
 
 const app = express();
 
+// Handle Slack URL encoded payloads (for interactivity)
+app.use(express.urlencoded({ extended: true }));
+
 // Allow CORS from the Vercel Admin UI
 const frontendUrl = process.env.FRONTEND_URL;
 if (frontendUrl) {
@@ -150,6 +154,9 @@ app.get('/channel/web/poll/:userId', async (req, res) => {
     return res.status(500).json({ error: (err as Error).message });
   }
 });
+
+// Slack Channel endpoint
+app.post('/slack/events', receiveSlackWebhook);
 
 // Health
 app.get('/health', async (_req: Request, res: Response) => {

@@ -7,6 +7,7 @@ function makeSession(overrides: Partial<Session> = {}): Session {
     tenantId: 'tenant-contract',
     userId: 'user-contract',
     whatsappNumber: '15550001000',
+    provider: 'whatsapp',
     currentJourneyId: null,
     currentStepIndex: 0,
     currentMode: 'menu',

@@ -152,3 +152,11 @@ export async function markAsRead(messageId: string, creds?: SenderCredentials): 
     console.warn(`[whatsapp] markAsRead failed: ${(err as Error).message}`);
   }
 }
+
+export const WhatsAppAdapter: IWhatsAppAdapter = {
+  sendTextMessage,
+  sendButtonMessage,
+  sendListMessage,
+  sendMediaMessage,
+  markAsRead,
+};
