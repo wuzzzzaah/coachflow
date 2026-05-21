@@ -9,6 +9,34 @@
 
 #### `SignOutButton()`
 
+## apps/admin/app/(admin)/analytics/live/_components/DropOffFunnel.tsx
+<a id="apps-admin-app-admin-analytics-live-components-dropofffunnel-tsx"></a>
+
+### Functions
+
+#### `DropOffFunnel()`
+
+## apps/admin/app/(admin)/analytics/live/_components/LiveMetrics.tsx
+<a id="apps-admin-app-admin-analytics-live-components-livemetrics-tsx"></a>
+
+### Functions
+
+#### `LiveMetrics()`
+
+## apps/admin/app/(admin)/analytics/live/_components/StuckUserList.tsx
+<a id="apps-admin-app-admin-analytics-live-components-stuckuserlist-tsx"></a>
+
+### Functions
+
+#### `StuckUserList()`
+
+## apps/admin/app/(admin)/analytics/live/page.tsx
+<a id="apps-admin-app-admin-analytics-live-page-tsx"></a>
+
+### Functions
+
+#### `LiveTelemetryPage()`
+
 ## apps/admin/app/(admin)/analytics/page.tsx
 <a id="apps-admin-app-admin-analytics-page-tsx"></a>
 
@@ -76,7 +104,11 @@
 
 ### Functions
 
-#### `async JourneysPage({ searchParams }: { searchParams: Promise<{ tenantId?: string }> })`
+#### `async JourneysPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tenantId?: string }>;
+})`
 
 ## apps/admin/app/(admin)/layout.tsx
 <a id="apps-admin-app-admin-layout-tsx"></a>
@@ -116,6 +148,13 @@
 ### Functions
 
 #### `AlertRulesPage()`
+
+## apps/admin/app/(admin)/settings/slack/page.tsx
+<a id="apps-admin-app-admin-settings-slack-page-tsx"></a>
+
+### Functions
+
+#### `SlackSettingsPage()`
 
 ## apps/admin/app/(admin)/tenants/_components/TenantsClientPage.tsx
 <a id="apps-admin-app-admin-tenants-components-tenantsclientpage-tsx"></a>
@@ -174,6 +213,99 @@
 
 #### `async WebhooksPage()`
 
+## apps/admin/app/(learner)/auth/callback/page.tsx
+<a id="apps-admin-app-learner-auth-callback-page-tsx"></a>
+
+### Functions
+
+#### `AuthCallbackPage()`
+
+## apps/admin/app/(learner)/chat/_components/ChatWindow.tsx
+<a id="apps-admin-app-learner-chat-components-chatwindow-tsx"></a>
+
+### Functions
+
+#### `ChatWindow({ userId, tenantId }: ChatWindowProps)`
+
+## apps/admin/app/(learner)/chat/_components/JourneyPicker.tsx
+<a id="apps-admin-app-learner-chat-components-journeypicker-tsx"></a>
+
+### Functions
+
+#### `JourneyPicker({
+  userId,
+  tenantId,
+  journeys,
+  onEnrolled,
+}: JourneyPickerProps)`
+
+## apps/admin/app/(learner)/chat/_components/MessageInput.tsx
+<a id="apps-admin-app-learner-chat-components-messageinput-tsx"></a>
+
+### Functions
+
+#### `MessageInput({ onSendMessage }: MessageInputProps)`
+
+## apps/admin/app/(learner)/chat/_components/useChat.ts
+<a id="apps-admin-app-learner-chat-components-usechat-ts"></a>
+
+### Functions
+
+#### `useChat(userId: string, tenantId: string)`
+
+### Constants
+
+- `Message`: `interface`
+
+## apps/admin/app/(learner)/chat/actions.ts
+<a id="apps-admin-app-learner-chat-actions-ts"></a>
+
+### Functions
+
+#### `async enrollInJourney(userId: string, tenantId: string, journeyId: string)`
+
+## apps/admin/app/(learner)/chat/page.tsx
+<a id="apps-admin-app-learner-chat-page-tsx"></a>
+
+### Functions
+
+#### `ChatPage()`
+
+## apps/admin/app/(learner)/layout.tsx
+<a id="apps-admin-app-learner-layout-tsx"></a>
+
+### Functions
+
+#### `async LearnerLayout({ children }: { children: React.ReactNode })`
+
+## apps/admin/app/(learner)/login/page.tsx
+<a id="apps-admin-app-learner-login-page-tsx"></a>
+
+### Functions
+
+#### `LearnerLoginPage()`
+
+## apps/admin/app/(learner)/progress/_components/ScoreHistory.tsx
+<a id="apps-admin-app-learner-progress-components-scorehistory-tsx"></a>
+
+### Functions
+
+#### `ScoreHistory({ scores }: ScoreHistoryProps)`
+
+## apps/admin/app/(learner)/progress/_components/StepProgress.tsx
+<a id="apps-admin-app-learner-progress-components-stepprogress-tsx"></a>
+
+### Functions
+
+#### `StepProgress({ currentStepIndex, totalSteps }: StepProgressProps)`
+
+## apps/admin/app/(learner)/progress/page.tsx
+<a id="apps-admin-app-learner-progress-page-tsx"></a>
+
+### Functions
+
+#### `ProgressPage()`
+
 ## apps/admin/app/layout.tsx
 <a id="apps-admin-app-layout-tsx"></a>
 
@@ -224,6 +356,9 @@
 
 #### `async createClient()`
 
+## apps/api/src/__tests__/normalizeWebMessage.test.ts
+<a id="apps-api-src-tests-normalizewebmessage-test-ts"></a>
+
 ## apps/api/src/ai/geminiClient.ts
 <a id="apps-api-src-ai-geminiclient-ts"></a>
 
@@ -270,6 +405,16 @@
 
 - `systemPrompt`
 
+## apps/api/src/alerts/__tests__/evaluateAlerts.test.ts
+<a id="apps-api-src-alerts-tests-evaluatealerts-test-ts"></a>
+
+## apps/api/src/alerts/evaluateAlerts.ts
+<a id="apps-api-src-alerts-evaluatealerts-ts"></a>
+
+### Functions
+
+#### `async evaluateAlerts(tenantId: string)`
+
 ## apps/api/src/db/__tests__/analytics.test.ts
 <a id="apps-api-src-db-tests-analytics-test-ts"></a>
 
@@ -294,6 +439,9 @@
 ## apps/api/src/db/__tests__/scores.test.ts
 <a id="apps-api-src-db-tests-scores-test-ts"></a>
 
+## apps/api/src/db/__tests__/supabaseClient.test.ts
+<a id="apps-api-src-db-tests-supabaseclient-test-ts"></a>
+
 ## apps/api/src/db/alertRules.ts
 <a id="apps-api-src-db-alertrules-ts"></a>
 
@@ -304,6 +452,8 @@
 #### `async upsertAlertRule(tenantId: string, rule: Partial<AlertRule> & { id?: string }) -> Promise<AlertRule>`
 
 #### `async deleteAlertRule(tenantId: string, id: string) -> Promise<void>`
+
+#### `async markAlertFired(ruleId: string) -> Promise<void>`
 
 ## apps/api/src/db/analytics.ts
 <a id="apps-api-src-db-analytics-ts"></a>
@@ -385,7 +535,13 @@ Export all data stored about a user.
 
 #### `async getJourney(tenantId: string, journeyId: string) -> Promise<JourneyConfig | null>`
 
-#### `async createJourney(tenantId: string, journeyData: { id: string; title: string; description?: string; estimated_minutes?: number; status?: 'draft' | 'published' }) -> Promise<void>`
+#### `async createJourney(tenantId: string, journeyData: {
+    id: string;
+    title: string;
+    description?: string;
+    estimated_minutes?: number;
+    status?: 'draft' | 'published';
+  }) -> Promise<void>`
 
 #### `async updateJourney(tenantId: string, journeyId: string, journeyData: {
     title?: string;
@@ -503,6 +659,8 @@ Returns array of user IDs + hours idle.
 
 #### `async getResendApiKey(tenantId: string) -> Promise<string | null>`
 
+#### `async getSlackWebhookUrl(tenantId: string) -> Promise<string | null>`
+
 #### `async upsertNotificationConfig(tenantId: string, config: Partial<NotificationConfig>) -> Promise<NotificationConfig>`
 
 ## apps/api/src/db/reminders.ts
@@ -602,8 +760,9 @@ Find the most recent un-ended session for a user.
 
 #### `supabase() -> SupabaseClient`
 
-Returns a lazily-initialised Supabase client.
-Reads SUPABASE_URL and SUPABASE_ANON_KEY from the environment.
+Returns a lazily-initialised Supabase client using the service-role key.
+The service-role key bypasses RLS — appropriate for all server-side operations.
+Never expose this client or key to the browser.
 
 ## apps/api/src/db/tenants.ts
 <a id="apps-api-src-db-tenants-ts"></a>
@@ -625,6 +784,12 @@ Reads SUPABASE_URL and SUPABASE_ANON_KEY from the environment.
 #### `async updateTenant(tenantId: string, payload: { name?: string; phone_number_id?: string; webhook_verify_token?: string }) -> Promise<Tenant>`
 
 #### `async setTenantWhatsAppToken(tenantId: string, token: string) -> Promise<void>`
+
+#### `async getTenantSlackToken(tenantId: string) -> Promise<string | null>`
+
+#### `async setTenantSlackToken(tenantId: string, token: string, teamId: string, teamName: string) -> Promise<void>`
+
+#### `async clearTenantSlackToken(tenantId: string) -> Promise<void>`
 
 #### `async upsertTenantPrompt(tenantId: string, key: string, content: string) -> Promise<void>`
 
@@ -654,6 +819,8 @@ Atomically claim a Meta message ID for processing.
 Returns true if this is the first time we've seen it, false if duplicate.
 
 #### `async getUserByNumber(whatsappNumber: string) -> Promise<UserRecord | null>`
+
+#### `async getUserById(userId: string) -> Promise<UserRecord | null>`
 
 #### `async searchUsers(tenantId: string, query: string)`
 
@@ -857,6 +1024,9 @@ Generates a SCORM 1.2 zip package for a journey.
 ## apps/api/src/index.ts
 <a id="apps-api-src-index-ts"></a>
 
+## apps/api/src/middleware/__tests__/learnerAuth.test.ts
+<a id="apps-api-src-middleware-tests-learnerauth-test-ts"></a>
+
 ## apps/api/src/middleware/auth.ts
 <a id="apps-api-src-middleware-auth-ts"></a>
 
@@ -875,6 +1045,21 @@ Must be used after requireAuth.
 ### Constants
 
 - `AuthUser`: `interface`
+
+## apps/api/src/middleware/learnerAuth.ts
+<a id="apps-api-src-middleware-learnerauth-ts"></a>
+
+### Functions
+
+#### `async requireLearner(req: Request, res: Response, next: NextFunction) -> Promise<void>`
+
+Require a valid Supabase Auth JWT and verify it belongs to a registered learner.
+Attaches req.learner and req.tenantId on success; returns 401/403 on failure.
+Also handles auto-linking of learner_id for existing user records matched by email.
+
+### Constants
+
+- `LearnerContext`: `interface`
 
 ## apps/api/src/notifications/email.ts
 <a id="apps-api-src-notifications-email-ts"></a>
@@ -1014,6 +1199,13 @@ Status updates and empty payloads return an empty array.
 
 ###### `constructor(tenantId: string, userId: string)`
 
+###### `parseInbound(body: {
+    userId: string;
+    text?: string;
+    kind?: string;
+    replyId?: string;
+  }) -> InboundMessage`
+
 ###### `async sendTextMessage(to: string, text: string) -> Promise<void>`
 
 ###### `async sendMediaMessage(to: string, mediaType: 'image' | 'document' | 'audio' | 'video', mediaUrl: string, caption: string) -> Promise<void>`
@@ -1022,7 +1214,7 @@ Status updates and empty payloads return an empty array.
 
 ###### `async sendListMessage(to: string, body: string, buttonLabel: string, sections: ListSection[]) -> Promise<void>`
 
-###### `async markAsRead(messageId: string) -> Promise<void>`
+###### `async markAsRead(_messageId: string) -> Promise<void>`
 
 
 ## apps/api/src/whatsapp/webhook.ts
