@@ -37,16 +37,15 @@ function rowsToConfig(journey: JourneyRow, steps: JourneyStepRow[]): JourneyConf
   };
 }
 
-export async function listJourneys(tenantId: string, includeDrafts = false): Promise<JourneyConfig[]> {
+export async function listJourneys(
+  tenantId: string,
+  includeDrafts = false,
+): Promise<JourneyConfig[]> {
   const db = supabase();
-  let query = db
-    .from('journeys')
-    .select('*')
-    .eq('tenant_id', tenantId)
-    .is('deleted_at', null);
+  let query = db.from('journeys').select('*').eq('tenant_id', tenantId).is('deleted_at', null);
 
   if (!includeDrafts) {
-    query = query.eq('status', 'published');
+    query = query.eq('status', 'published').eq('is_template', false);
   }
 
   const { data: journeyRows, error: jErr } = await query;
@@ -100,7 +99,13 @@ export async function getJourney(
 
 export async function createJourney(
   tenantId: string,
-  journeyData: { id: string; title: string; description?: string; estimated_minutes?: number; status?: 'draft' | 'published' }
+  journeyData: {
+    id: string;
+    title: string;
+    description?: string;
+    estimated_minutes?: number;
+    status?: 'draft' | 'published';
+  },
 ): Promise<void> {
   const db = supabase();
   const { error } = await db.from('journeys').insert({
@@ -127,13 +132,14 @@ export async function updateJourney(
     schedule_type?: 'manual' | 'daily' | 'weekly';
     schedule_hour?: number | null;
     schedule_day?: number | null;
-  }
+  },
 ): Promise<void> {
   const db = supabase();
   const updates: Record<string, unknown> = {};
   if (journeyData.title !== undefined) updates.title = journeyData.title;
   if (journeyData.description !== undefined) updates.description = journeyData.description;
-  if (journeyData.estimated_minutes !== undefined) updates.estimated_minutes = journeyData.estimated_minutes;
+  if (journeyData.estimated_minutes !== undefined)
+    updates.estimated_minutes = journeyData.estimated_minutes;
   if (journeyData.status !== undefined) updates.status = journeyData.status;
   if (journeyData.is_template !== undefined) updates.is_template = journeyData.is_template;
   if (journeyData.schedule_type !== undefined) updates.schedule_type = journeyData.schedule_type;

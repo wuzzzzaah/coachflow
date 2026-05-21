@@ -138,27 +138,18 @@ app.post('/webhook/whatsapp', verifySignature, receiveWebhook);
 // Web Channel endpoints
 app.post('/channel/web/receive', requireLearner, async (req, res) => {
   try {
-    const { text } = req.body;
-    if (!text) {
-      return res.status(400).json({ error: 'text is required' });
+    const { text, replyId } = req.body;
+    if (!text && !replyId) {
+      return res.status(400).json({ error: 'text or replyId is required' });
     }
 
     const userId = req.learner!.id;
     const tenantId = req.learner!.tenantId;
 
     const adapter = new WebAdapter(tenantId, userId);
-    // Web channel uses the userId as the "whatsappNumber" for session lookup
-    await handleInbound(
-      {
-        whatsappNumber: userId,
-        whatsappMessageId: crypto.randomUUID(),
-        kind: 'text' as const,
-        provider: 'web' as const,
-        text,
-      },
-      tenantId,
-      adapter,
-    );
+    const msg = WebAdapter.parseInbound(req.body);
+
+    await handleInbound(msg, tenantId, adapter);
 
     return res.status(200).json({ status: 'ok' });
   } catch (err) {
@@ -763,7 +754,6 @@ app.get('/api/users/:id/export', requireRole('admin', 'super_admin'), async (req
     return res.status(500).json({ error: (err as Error).message });
   }
 });
-
 
 app.post('/api/users/:id/nudge', requireRole('admin', 'super_admin'), async (req, res) => {
   try {
