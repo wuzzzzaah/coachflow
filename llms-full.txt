@@ -9,6 +9,34 @@
 
 #### `SignOutButton()`
 
+## apps/admin/app/(admin)/analytics/live/_components/DropOffFunnel.tsx
+<a id="apps-admin-app-admin-analytics-live-components-dropofffunnel-tsx"></a>
+
+### Functions
+
+#### `DropOffFunnel()`
+
+## apps/admin/app/(admin)/analytics/live/_components/LiveMetrics.tsx
+<a id="apps-admin-app-admin-analytics-live-components-livemetrics-tsx"></a>
+
+### Functions
+
+#### `LiveMetrics()`
+
+## apps/admin/app/(admin)/analytics/live/_components/StuckUserList.tsx
+<a id="apps-admin-app-admin-analytics-live-components-stuckuserlist-tsx"></a>
+
+### Functions
+
+#### `StuckUserList()`
+
+## apps/admin/app/(admin)/analytics/live/page.tsx
+<a id="apps-admin-app-admin-analytics-live-page-tsx"></a>
+
+### Functions
+
+#### `LiveTelemetryPage()`
+
 ## apps/admin/app/(admin)/analytics/page.tsx
 <a id="apps-admin-app-admin-analytics-page-tsx"></a>
 
@@ -117,6 +145,13 @@
 
 #### `AlertRulesPage()`
 
+## apps/admin/app/(admin)/settings/slack/page.tsx
+<a id="apps-admin-app-admin-settings-slack-page-tsx"></a>
+
+### Functions
+
+#### `SlackSettingsPage()`
+
 ## apps/admin/app/(admin)/tenants/_components/TenantsClientPage.tsx
 <a id="apps-admin-app-admin-tenants-components-tenantsclientpage-tsx"></a>
 
@@ -173,6 +208,20 @@
 ### Functions
 
 #### `async WebhooksPage()`
+
+## apps/admin/app/(learner)/auth/callback/page.tsx
+<a id="apps-admin-app-learner-auth-callback-page-tsx"></a>
+
+### Functions
+
+#### `AuthCallbackPage()`
+
+## apps/admin/app/(learner)/login/page.tsx
+<a id="apps-admin-app-learner-login-page-tsx"></a>
+
+### Functions
+
+#### `LearnerLoginPage()`
 
 ## apps/admin/app/layout.tsx
 <a id="apps-admin-app-layout-tsx"></a>
@@ -626,6 +675,12 @@ Reads SUPABASE_URL and SUPABASE_ANON_KEY from the environment.
 
 #### `async setTenantWhatsAppToken(tenantId: string, token: string) -> Promise<void>`
 
+#### `async getTenantSlackToken(tenantId: string) -> Promise<string | null>`
+
+#### `async setTenantSlackToken(tenantId: string, token: string, teamId: string, teamName: string) -> Promise<void>`
+
+#### `async clearTenantSlackToken(tenantId: string) -> Promise<void>`
+
 #### `async upsertTenantPrompt(tenantId: string, key: string, content: string) -> Promise<void>`
 
 #### `async deleteTenantPrompt(tenantId: string, key: string) -> Promise<void>`
@@ -654,6 +709,8 @@ Atomically claim a Meta message ID for processing.
 Returns true if this is the first time we've seen it, false if duplicate.
 
 #### `async getUserByNumber(whatsappNumber: string) -> Promise<UserRecord | null>`
+
+#### `async getUserById(userId: string) -> Promise<UserRecord | null>`
 
 #### `async searchUsers(tenantId: string, query: string)`
 
@@ -875,6 +932,21 @@ Must be used after requireAuth.
 ### Constants
 
 - `AuthUser`: `interface`
+
+## apps/api/src/middleware/learnerAuth.ts
+<a id="apps-api-src-middleware-learnerauth-ts"></a>
+
+### Functions
+
+#### `async requireLearner(req: Request, res: Response, next: NextFunction) -> Promise<void>`
+
+Require a valid Supabase Auth JWT and verify it belongs to a registered learner.
+Attaches req.learner and req.tenantId on success; returns 401/403 on failure.
+Also handles auto-linking of learner_id for existing user records matched by email.
+
+### Constants
+
+- `LearnerContext`: `interface`
 
 ## apps/api/src/notifications/email.ts
 <a id="apps-api-src-notifications-email-ts"></a>
