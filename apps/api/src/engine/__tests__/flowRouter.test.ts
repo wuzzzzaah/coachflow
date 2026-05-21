@@ -116,6 +116,8 @@ const SAMPLE_STEP = {
   branchOnLowScore: false,
   branchScoreThreshold: null,
   branchStepIndex: null,
+  mediaUrl: null,
+  mediaType: null,
 };
 
 function makeUser(

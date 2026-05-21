@@ -42,6 +42,8 @@ const sampleStep: JourneyStepRow = {
   branch_on_low_score: false,
   branch_score_threshold: null,
   branch_step_index: null,
+  media_url: null,
+  media_type: null,
 };
 
 function makeChain(data: unknown, error: unknown = null) {
