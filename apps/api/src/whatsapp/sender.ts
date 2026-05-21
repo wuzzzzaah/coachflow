@@ -1,5 +1,5 @@
 import axios, { AxiosError } from 'axios';
-import { ButtonOption, ListSection } from './types';
+import { ButtonOption, ListSection } from '@coachflow/shared';
 
 const GRAPH_VERSION = 'v19.0';
 const MAX_LEN = 4096;

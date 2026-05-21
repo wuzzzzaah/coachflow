@@ -1,7 +1,7 @@
 import 'dotenv/config';
+import crypto from 'node:crypto';
 import express, { Request, Response } from 'express';
 import cors from 'cors';
-import crypto from 'node:crypto';
 import { verifyWebhook, receiveWebhook, verifySignature } from './whatsapp/webhook';
 import {
   activeSessionCount,
@@ -14,7 +14,7 @@ import { listJourneys, getJourney, createJourney, updateJourney, deleteJourney }
 import { listJourneyVersions, getActiveUserCount } from './db/journeyVersions';
 import { listTemplates, cloneJourney } from './db/journeys';
 import { createStep, updateStep, deleteStep, reorderSteps } from './db/journeySteps';
-import { getUserByNumber, searchUsers, getUserProgress } from './db/users';
+import { getUserByNumber, searchUsers, getUserProgress, upsertUser } from './db/users';
 import { getScoresForUser } from './db/scores';
 import { getUsersExportData, getUserExportData } from './db/export';
 import { getSessionMessages, getUserSessions, getSessionById } from './db/sessions';
@@ -31,12 +31,15 @@ import {
 import { getActiveSessions, getStepDropOff, getStuckUsers } from './db/metrics';
 import { getIdleUsers, logReminder } from './db/reminders';
 import { generateScormPackage } from './export/scorm';
+import { pollAndClearWebMessages } from './db/webMessages';
 import { eraseUser, exportUserData } from './db/gdpr';
 import { writeAuditLog, getAuditLog } from './db/auditLog';
 import { getNotificationConfig, upsertNotificationConfig } from './db/notifications';
 import { listAlertRules, upsertAlertRule, deleteAlertRule } from './db/alertRules';
 import { notifyIdleUser } from './notifications/notify';
 import { deliverScheduledSteps } from './scheduler/deliverScheduled';
+import { handleInbound } from './engine/flowRouter';
+import { WebAdapter } from './whatsapp/webAdapter';
 import {
   listCohorts,
   getCohort,
@@ -107,6 +110,46 @@ app.use(
 // Webhook endpoints
 app.get('/webhook/whatsapp', verifyWebhook);
 app.post('/webhook/whatsapp', verifySignature, receiveWebhook);
+
+// Web Channel endpoints
+app.post('/channel/web/receive', async (req, res) => {
+  try {
+    const { userId, text, tenantId } = req.body;
+    if (!userId || !text || !tenantId) {
+      return res.status(400).json({ error: 'userId, text, and tenantId are required' });
+    }
+
+    const adapter = new WebAdapter(tenantId, userId);
+    // Web channel uses the userId as the "whatsappNumber" for session lookup
+    await handleInbound(
+      {
+        whatsappNumber: userId,
+        whatsappMessageId: crypto.randomUUID(),
+        kind: 'text',
+        text,
+      },
+      tenantId,
+      adapter,
+    );
+
+    return res.status(200).json({ status: 'ok' });
+  } catch (err) {
+    console.error(`[web/receive] error: ${(err as Error).message}`);
+    return res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+app.get('/channel/web/poll/:userId', async (req, res) => {
+  try {
+    const tenantId = (req.query.tenantId as string) ?? process.env.DEFAULT_TENANT_ID ?? '';
+    if (!tenantId) return res.status(400).json({ error: 'tenantId query param required' });
+
+    const messages = await pollAndClearWebMessages(tenantId, req.params.userId);
+    return res.json(messages.map((m) => m.content));
+  } catch (err) {
+    return res.status(500).json({ error: (err as Error).message });
+  }
+});
 
 // Health
 app.get('/health', async (_req: Request, res: Response) => {

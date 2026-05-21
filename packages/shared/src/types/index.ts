@@ -218,3 +218,43 @@ export interface UserDataExport {
   reminders: { sent_at: string }[];
   exportedAt: string;
 }
+
+/** Normalised inbound message that the engine consumes. */
+export interface InboundMessage {
+  whatsappNumber: string;
+  whatsappMessageId: string;
+  displayName?: string;
+  kind: 'text' | 'button' | 'list' | 'unsupported';
+  text?: string;
+  replyId?: string;
+  replyTitle?: string;
+  unsupportedType?: string;
+}
+
+export interface ButtonOption {
+  id: string;
+  title: string;
+}
+
+export interface ListSection {
+  title: string;
+  rows: Array<{ id: string; title: string; description?: string }>;
+}
+
+export interface IWhatsAppAdapter {
+  sendTextMessage(to: string, text: string): Promise<void>;
+  sendMediaMessage(
+    to: string,
+    mediaType: 'image' | 'document' | 'audio' | 'video',
+    mediaUrl: string,
+    caption?: string,
+  ): Promise<void>;
+  sendButtonMessage(to: string, body: string, buttons: ButtonOption[]): Promise<void>;
+  sendListMessage(
+    to: string,
+    body: string,
+    buttonLabel: string,
+    sections: ListSection[],
+  ): Promise<void>;
+  markAsRead(messageId: string): Promise<void>;
+}

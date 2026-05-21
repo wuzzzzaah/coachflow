@@ -3,6 +3,7 @@ import { Request, Response, NextFunction } from 'express';
 import { parseWebhook } from './parser';
 import { handleInbound } from '../engine/flowRouter';
 import { MetaWebhookPayload } from './types';
+import { WhatsAppAdapter } from './whatsappAdapter';
 import { getTenantByPhoneNumberId, getTenantWhatsAppToken } from '../db/tenants';
 
 /** GET /webhook/whatsapp — Meta hub challenge verification. */
@@ -102,11 +103,12 @@ async function processAsync(payload: MetaWebhookPayload): Promise<void> {
   }
 
   const senderCreds = accessToken && phoneNumberId ? { phoneNumberId, accessToken } : undefined;
+  const adapter = new WhatsAppAdapter(senderCreds);
 
   const messages = parseWebhook(payload);
   for (const m of messages) {
     try {
-      await handleInbound(m, tenantId, senderCreds);
+      await handleInbound(m, tenantId, adapter);
     } catch (err) {
       console.error(
         `[webhook] handleInbound failed for ${m.whatsappMessageId}: ${(err as Error).message}`,

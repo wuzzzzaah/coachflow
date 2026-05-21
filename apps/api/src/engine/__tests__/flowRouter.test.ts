@@ -73,7 +73,7 @@ import { handleInbound } from '../flowRouter';
 import { parseWebhook } from '../../whatsapp/parser';
 import { configureSessionStore } from '../sessionManager';
 import { InMemorySessionStore } from '../inMemorySessionStore';
-import { sendTextMessage, sendListMessage } from '../../whatsapp/sender';
+import { WhatsAppAdapter } from '../../whatsapp/whatsappAdapter';
 import { claimMessage, upsertUser } from '../../db/users';
 import { listJourneys, getJourney, getStep } from '../../db/journeyLoader';
 import { getActiveVersionForUser } from '../../db/journeyVersions';
@@ -165,6 +165,11 @@ function firstMessage(fixture: MetaWebhookPayload) {
 
 // ── Tests ──────────────────────────────────────────────────────────────────
 
+const adapter = new WhatsAppAdapter();
+const sendTextMessage = vi.spyOn(adapter, 'sendTextMessage');
+const sendListMessage = vi.spyOn(adapter, 'sendListMessage');
+const sendMediaMessage = vi.spyOn(adapter, 'sendMediaMessage');
+
 describe('handleInbound — first message triggers onboarding', () => {
   it('sends welcome list for a brand-new user', async () => {
     vi.mocked(upsertUser).mockResolvedValue({
@@ -172,14 +177,13 @@ describe('handleInbound — first message triggers onboarding', () => {
       created: true,
     });
     const msg = firstMessage(textFixture);
-    await handleInbound(msg, TENANT);
+    await handleInbound(msg, TENANT, adapter);
     expect(sendListMessage).toHaveBeenCalledOnce();
     expect(sendListMessage).toHaveBeenCalledWith(
       msg.whatsappNumber,
       expect.stringContaining('Welcome'),
       'Pick a journey',
       expect.any(Array),
-      undefined,
     );
   });
 });
@@ -189,7 +193,7 @@ describe('handleInbound — conditional branching', () => {
     const { getLatestScoreForStep } = await import('../../db/scores');
 
     const startMsg = firstMessage(buttonFixture);
-    await handleInbound(startMsg, TENANT);
+    await handleInbound(startMsg, TENANT, adapter);
 
     vi.mocked(getJourney).mockResolvedValue({ ...SAMPLE_JOURNEY, totalSteps: 10 });
 
@@ -216,16 +220,16 @@ describe('handleInbound — conditional branching', () => {
       whatsappMessageId: 'wamid.branch001',
       kind: 'text',
       text: 'I did my best',
-    }, TENANT);
+    }, TENANT, adapter);
 
-    expect(sendTextMessage).toHaveBeenCalledWith(startMsg.whatsappNumber, 'Remedial', undefined);
+    expect(sendTextMessage).toHaveBeenCalledWith(startMsg.whatsappNumber, 'Remedial');
   });
 
   it('proceeds to nextIndex when score is above threshold', async () => {
     const { getLatestScoreForStep } = await import('../../db/scores');
 
     const startMsg = firstMessage(buttonFixture);
-    await handleInbound(startMsg, TENANT);
+    await handleInbound(startMsg, TENANT, adapter);
 
     vi.mocked(getJourney).mockResolvedValue({ ...SAMPLE_JOURNEY, totalSteps: 10 });
 
@@ -252,9 +256,9 @@ describe('handleInbound — conditional branching', () => {
       whatsappMessageId: 'wamid.nobranch001',
       kind: 'text',
       text: 'I did great',
-    }, TENANT);
+    }, TENANT, adapter);
 
-    expect(sendTextMessage).toHaveBeenCalledWith(startMsg.whatsappNumber, 'Step 2', undefined);
+    expect(sendTextMessage).toHaveBeenCalledWith(startMsg.whatsappNumber, 'Step 2');
   });
 });
 
@@ -265,7 +269,7 @@ describe('handleInbound — journey completion scorecard', () => {
 
     // 1. Start journey. Total steps = 2.
     const startMsg = firstMessage(buttonFixture);
-    await handleInbound(startMsg, TENANT);
+    await handleInbound(startMsg, TENANT, adapter);
 
     // 2. Mock state to be on the LAST step (index 1)
     const sessionStore = (await import('../sessionManager')).getSession;
@@ -304,29 +308,25 @@ describe('handleInbound — journey completion scorecard', () => {
       text: 'I am done',
     };
 
-    await handleInbound(followMsg, TENANT);
+    await handleInbound(followMsg, TENANT, adapter);
 
     expect(completeUserJourney).toHaveBeenCalled();
     // Verify scorecard message
     expect(sendTextMessage).toHaveBeenCalledWith(
       startMsg.whatsappNumber,
       expect.stringContaining("You've completed *Maritime Leadership*!"),
-      undefined,
     );
     expect(sendTextMessage).toHaveBeenCalledWith(
       startMsg.whatsappNumber,
       expect.stringContaining("overall score: 8.5 / 10"),
-      undefined,
     );
     expect(sendTextMessage).toHaveBeenCalledWith(
       startMsg.whatsappNumber,
       expect.stringContaining("Empathy — 9/10"),
-      undefined,
     );
     expect(sendTextMessage).toHaveBeenCalledWith(
       startMsg.whatsappNumber,
       expect.stringContaining("Great summary here."),
-      undefined,
     );
   });
 });
@@ -343,7 +343,7 @@ describe('handleInbound — idle state handling', () => {
       kind: 'text' as const,
       text: 'What can you do?',
     };
-    await handleInbound(msg, TENANT);
+    await handleInbound(msg, TENANT, adapter);
     expect(sendListMessage).toHaveBeenCalledOnce();
   });
 
@@ -358,7 +358,7 @@ describe('handleInbound — idle state handling', () => {
       kind: 'text' as const,
       text: 'START',
     };
-    await handleInbound(msg, TENANT);
+    await handleInbound(msg, TENANT, adapter);
     expect(sendListMessage).toHaveBeenCalledOnce();
   });
 
@@ -370,11 +370,10 @@ describe('handleInbound — idle state handling', () => {
       kind: 'text' as const,
       text: 'hi',
     };
-    await handleInbound(msg, TENANT);
+    await handleInbound(msg, TENANT, adapter);
     expect(sendTextMessage).toHaveBeenCalledWith(
       msg.whatsappNumber,
       'No programmes are available yet. Please check back soon.',
-      undefined,
     );
   });
 });
@@ -399,7 +398,7 @@ describe('handleInbound — session restoration', () => {
       text: 'Switching',
     };
 
-    await handleInbound(msg, TENANT);
+    await handleInbound(msg, TENANT, adapter);
 
     // Should call getJourney for the NEW journey
     expect(getJourney).toHaveBeenCalledWith(TENANT, 'maritime-leadership-001');
@@ -409,7 +408,6 @@ describe('handleInbound — session restoration', () => {
     expect(sendTextMessage).toHaveBeenCalledWith(
       user.whatsapp_number,
       expect.stringContaining('Starting'),
-      undefined,
     );
   });
 
@@ -434,7 +432,7 @@ describe('handleInbound — session restoration', () => {
       text: 'Continued thought',
     };
 
-    await handleInbound(msg, TENANT);
+    await handleInbound(msg, TENANT, adapter);
 
     // Should have called generate for the coaching turn
     expect(generate).toHaveBeenCalled();
@@ -447,7 +445,7 @@ describe('handleInbound — duplicate webhook ignored', () => {
   it('does not call sendTextMessage when claimMessage returns false', async () => {
     vi.mocked(claimMessage).mockResolvedValue(false);
     const msg = firstMessage(duplicateFixture);
-    await handleInbound(msg, TENANT);
+    await handleInbound(msg, TENANT, adapter);
     expect(sendTextMessage).not.toHaveBeenCalled();
     expect(sendListMessage).not.toHaveBeenCalled();
   });
@@ -457,12 +455,11 @@ describe('handleInbound — journey selection via button reply', () => {
   it('starts journey and sends opening message', async () => {
     const msg = firstMessage(buttonFixture);
     // msg.replyId is 'maritime-leadership-001' — flowRouter should call startJourney
-    await handleInbound(msg, TENANT);
+    await handleInbound(msg, TENANT, adapter);
     expect(getJourney).toHaveBeenCalledWith(TENANT, 'maritime-leadership-001');
     expect(sendTextMessage).toHaveBeenCalledWith(
       expect.any(String),
       expect.stringContaining('Maritime Leadership'),
-      undefined,
     );
   });
 });
@@ -471,7 +468,7 @@ describe('handleInbound — coaching turn', () => {
   it('calls AI and sends response', async () => {
     // Put session into coaching mode first.
     const msg = firstMessage(buttonFixture);
-    await handleInbound(msg, TENANT); // starts journey, enters coaching mode
+    await handleInbound(msg, TENANT, adapter); // starts journey, enters coaching mode
     vi.mocked(generate).mockResolvedValue(
       JSON.stringify({ message: 'Keep going!', intent: 'coach', shouldAdvance: false }),
     );
@@ -482,9 +479,9 @@ describe('handleInbound — coaching turn', () => {
       kind: 'text' as const,
       text: 'I reflect on leadership daily',
     };
-    await handleInbound(coachMsg, TENANT);
+    await handleInbound(coachMsg, TENANT, adapter);
     expect(generate).toHaveBeenCalled();
-    expect(sendTextMessage).toHaveBeenCalledWith(msg.whatsappNumber, 'Keep going!', undefined);
+    expect(sendTextMessage).toHaveBeenCalledWith(msg.whatsappNumber, 'Keep going!');
   });
 });
 
@@ -492,7 +489,7 @@ describe('handleInbound — step advancement', () => {
   it('calls beginStep when shouldAdvance is true and turnCount meets minTurns', async () => {
     // Start journey.
     const startMsg = firstMessage(buttonFixture);
-    await handleInbound(startMsg, TENANT);
+    await handleInbound(startMsg, TENANT, adapter);
 
     // Override AI to request advancement; step minTurns = 1 so one turn suffices.
     vi.mocked(generate).mockResolvedValue(
@@ -514,9 +511,9 @@ describe('handleInbound — step advancement', () => {
       kind: 'text' as const,
       text: 'I am ready',
     };
-    await handleInbound(followMsg, TENANT);
+    await handleInbound(followMsg, TENANT, adapter);
     // The router should have opened step 2's opening message.
-    expect(sendTextMessage).toHaveBeenCalledWith(startMsg.whatsappNumber, 'Now step 2.', undefined);
+    expect(sendTextMessage).toHaveBeenCalledWith(startMsg.whatsappNumber, 'Now step 2.');
   });
 });
 
@@ -543,7 +540,7 @@ describe('handleInbound — assessment + score storage', () => {
 
     // Start journey (will trigger assessment turn automatically via beginStep).
     const startMsg = firstMessage(buttonFixture);
-    await handleInbound(startMsg, TENANT);
+    await handleInbound(startMsg, TENANT, adapter);
 
     expect(saveScore).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -553,7 +550,6 @@ describe('handleInbound — assessment + score storage', () => {
     expect(sendTextMessage).toHaveBeenCalledWith(
       startMsg.whatsappNumber,
       expect.stringContaining('Leadership'),
-      undefined,
     );
   });
 });
