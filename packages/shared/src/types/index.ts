@@ -42,7 +42,7 @@ export interface Session {
   tenantId: string;
   userId: string;
   whatsappNumber: string;
-  provider: 'whatsapp' | 'slack';
+  provider: 'whatsapp' | 'slack' | 'web';
   currentJourneyId: string | null;
   currentStepIndex: number;
   currentMode: FlowState;
@@ -176,7 +176,7 @@ export interface InboundMessage {
   whatsappMessageId: string;
   displayName?: string;
   kind: 'text' | 'button' | 'list' | 'unsupported';
-  provider: 'whatsapp' | 'slack';
+  provider: 'whatsapp' | 'slack' | 'web';
   text?: string;
   replyId?: string;
   replyTitle?: string;
@@ -195,6 +195,7 @@ export interface ListSection {
 
 // ── Adapter interfaces ────────────────────────────────────────────────────────
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export interface IWhatsAppAdapter {
   sendTextMessage(to: string, text: string, creds?: any): Promise<void>;
   sendButtonMessage(to: string, body: string, buttons: ButtonOption[], creds?: any): Promise<void>;
@@ -203,17 +204,18 @@ export interface IWhatsAppAdapter {
     body: string,
     buttonLabel: string,
     sections: ListSection[],
-    creds?: any
+    creds?: any,
   ): Promise<void>;
   sendMediaMessage(
     to: string,
     mediaType: 'image' | 'document' | 'audio' | 'video',
     mediaUrl: string,
     caption?: string,
-    creds?: any
+    creds?: any,
   ): Promise<void>;
   markAsRead(messageId: string, creds?: any): Promise<void>;
 }
+/* eslint-enable @typescript-eslint/no-explicit-any */
 
 export interface ISessionStore {
   get(whatsappNumber: string): Promise<Session | null>;

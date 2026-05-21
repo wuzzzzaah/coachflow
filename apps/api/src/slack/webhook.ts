@@ -84,7 +84,7 @@ export async function receiveSlackWebhook(req: Request, res: Response): Promise<
       };
 
       const tenantId = process.env.DEFAULT_TENANT_ID ?? 'default';
-      await handleInbound(msg, tenantId, new SlackAdapter()).catch((err) => {
+      await handleInbound(msg, tenantId, SlackAdapter).catch((err) => {
         console.error(`[slack] handleInbound failed: ${err.message}`);
       });
     }
@@ -107,7 +107,7 @@ export async function receiveSlackWebhook(req: Request, res: Response): Promise<
       };
 
       const tenantId = process.env.DEFAULT_TENANT_ID ?? 'default';
-      await handleInbound(msg, tenantId, new SlackAdapter()).catch((err) => {
+      await handleInbound(msg, tenantId, SlackAdapter).catch((err) => {
         console.error(`[slack] handleInbound interactive failed: ${err.message}`);
       });
     }
