@@ -3,6 +3,10 @@
 > Multi-tenant WhatsApp coaching platform
 
 SignOutButton: Provides SignOutButton.
+DropOffFunnel: Provides DropOffFunnel.
+LiveMetrics: Provides LiveMetrics.
+StuckUserList: Provides StuckUserList.
+page: Provides LiveTelemetryPage.
 page: Provides AnalyticsPage.
 page: Provides AuditLogPage.
 CohortDetailClientPage: Provides CohortDetailClientPage.
@@ -24,6 +28,8 @@ page: Provides SessionTranscriptPage.
 page: Provides UsersPage.
 WebhooksClientPage: Provides WebhooksClientPage.
 page: Provides WebhooksPage.
+page: Provides AuthCallbackPage.
+page: Provides LearnerLoginPage.
 layout: Provides RootLayout.
 page: Provides LoginPage.
 api: Provides apiFetch.
@@ -62,7 +68,7 @@ scores: Provides saveScore, getScoresForUser, getLatestScoreForStep.
 sessions: Provides startSession, endSession, logMessage, getSessionMessages, getLatestActiveSession, getSessionById, getUserSessions.
 supabaseClient: Provides supabase.
 tenants: Provides getTenantByPhoneNumberId, getTenantWhatsAppToken, getTenantPromptOverrides, listTenants, createTenant, getTenantById, updateTenant, setTenantWhatsAppToken, upsertTenantPrompt, deleteTenantPrompt.
-users: Provides upsertUser, updateUserProgress, markOnboarded, claimMessage, getUserByNumber, searchUsers, getUserProgress.
+users: Provides upsertUser, updateUserProgress, markOnboarded, claimMessage, getUserByNumber, getUserById, searchUsers, getUserProgress.
 webMessages: Provides storeOutboundWebMessage, pollAndClearWebMessages.
 webhooks: Provides listWebhooks, createWebhook, deleteWebhook, getEnabledWebhooksForEvent.
 contextBuilder.test:
@@ -82,6 +88,7 @@ scorm.test:
 scorm: Provides generateScormPackage.
 index:
 auth: Provides requireAuth, requireRole.
+learnerAuth: Provides requireLearner.
 email: Provides sendEmail.
 notify: Provides notifyJourneyComplete, notifyLowScore, notifyIdleUser.
 deliverScheduled.test:
@@ -109,6 +116,10 @@ index:
 ## Modules
 
 - [SignOutButton](llms-full.txt#apps-admin-app-admin-signoutbutton-tsx):
+- [DropOffFunnel](llms-full.txt#apps-admin-app-admin-analytics-live-components-dropofffunnel-tsx):
+- [LiveMetrics](llms-full.txt#apps-admin-app-admin-analytics-live-components-livemetrics-tsx):
+- [StuckUserList](llms-full.txt#apps-admin-app-admin-analytics-live-components-stuckuserlist-tsx):
+- [page](llms-full.txt#apps-admin-app-admin-analytics-live-page-tsx):
 - [page](llms-full.txt#apps-admin-app-admin-analytics-page-tsx):
 - [page](llms-full.txt#apps-admin-app-admin-audit-log-page-tsx):
 - [CohortDetailClientPage](llms-full.txt#apps-admin-app-admin-cohorts-id-components-cohortdetailclientpage-tsx):
@@ -130,6 +141,8 @@ index:
 - [page](llms-full.txt#apps-admin-app-admin-users-page-tsx):
 - [WebhooksClientPage](llms-full.txt#apps-admin-app-admin-webhooks-components-webhooksclientpage-tsx):
 - [page](llms-full.txt#apps-admin-app-admin-webhooks-page-tsx):
+- [page](llms-full.txt#apps-admin-app-learner-auth-callback-page-tsx):
+- [page](llms-full.txt#apps-admin-app-learner-login-page-tsx):
 - [layout](llms-full.txt#apps-admin-app-layout-tsx):
 - [page](llms-full.txt#apps-admin-app-login-page-tsx):
 - [api](llms-full.txt#apps-admin-lib-api-ts):
@@ -188,6 +201,7 @@ index:
 - [scorm](llms-full.txt#apps-api-src-export-scorm-ts):
 - [index](llms-full.txt#apps-api-src-index-ts):
 - [auth](llms-full.txt#apps-api-src-middleware-auth-ts):
+- [learnerAuth](llms-full.txt#apps-api-src-middleware-learnerauth-ts):
 - [email](llms-full.txt#apps-api-src-notifications-email-ts):
 - [notify](llms-full.txt#apps-api-src-notifications-notify-ts):
 - [deliverScheduled.test](llms-full.txt#apps-api-src-scheduler-tests-deliverscheduled-test-ts):
