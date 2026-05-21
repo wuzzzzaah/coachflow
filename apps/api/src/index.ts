@@ -2,6 +2,7 @@ import 'dotenv/config';
 import crypto from 'node:crypto';
 import express, { Request, Response } from 'express';
 import cors from 'cors';
+import axios from 'axios';
 import { verifyWebhook, receiveWebhook, verifySignature } from './whatsapp/webhook';
 import { receiveSlackWebhook } from './slack/webhook';
 import {
@@ -32,6 +33,8 @@ import {
   updateTenant,
   setTenantWhatsAppToken,
   getTenantWhatsAppToken,
+  setTenantSlackToken,
+  clearTenantSlackToken,
   getTenantPromptOverrides,
   upsertTenantPrompt,
   deleteTenantPrompt,
@@ -894,6 +897,71 @@ app.put('/api/tenants/:id/whatsapp-token', requireRole('super_admin'), async (re
     const { token } = req.body;
     if (!token) return res.status(400).json({ error: 'token required' });
     await setTenantWhatsAppToken(req.params.id, token);
+    return res.status(204).send();
+  } catch (err) {
+    return res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+// Slack OAuth & Connection APIs
+app.get('/api/slack/oauth/start', requireRole('admin', 'super_admin'), (req, res) => {
+  const tenantId = (req.query.tenantId as string) ?? process.env.DEFAULT_TENANT_ID ?? '';
+  if (!tenantId) return res.status(400).json({ error: 'tenantId required' });
+
+  const clientId = process.env.SLACK_CLIENT_ID;
+  const redirectUri = process.env.SLACK_REDIRECT_URI;
+  if (!clientId || !redirectUri) {
+    return res.status(500).json({ error: 'Slack OAuth not configured on server' });
+  }
+
+  // scope: users:read for identity (optional), chat:write for messages,
+  // commands for slash commands/interactivity, app_mentions:read for bot triggers
+  const scopes = 'chat:write,commands,app_mentions:read,groups:read,channels:read';
+  const slackUrl = `https://slack.com/oauth/v2/authorize?client_id=${clientId}&scope=${scopes}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${tenantId}`;
+
+  return res.redirect(slackUrl);
+});
+
+app.get('/api/slack/oauth/callback', async (req, res) => {
+  const { code, state: tenantId, error } = req.query;
+
+  if (error) {
+    console.error(`[slack/oauth] Slack returned error: ${error}`);
+    return res.redirect(`${process.env.FRONTEND_URL}/settings/slack?error=${error}`);
+  }
+
+  if (!code || !tenantId) {
+    return res.status(400).json({ error: 'Missing code or tenantId (state)' });
+  }
+
+  try {
+    const resExchange = await axios.post(
+      'https://slack.com/api/oauth.v2.access',
+      new URLSearchParams({
+        client_id: process.env.SLACK_CLIENT_ID || '',
+        client_secret: process.env.SLACK_CLIENT_SECRET || '',
+        code: code as string,
+        redirect_uri: process.env.SLACK_REDIRECT_URI || '',
+      }),
+    );
+
+    if (!resExchange.data.ok) {
+      throw new Error(`Slack OAuth exchange failed: ${resExchange.data.error}`);
+    }
+
+    const { access_token, team } = resExchange.data;
+    await setTenantSlackToken(tenantId as string, access_token, team.id, team.name);
+
+    return res.redirect(`${process.env.FRONTEND_URL}/settings/slack?success=true`);
+  } catch (err) {
+    console.error(`[slack/oauth] callback failed: ${(err as Error).message}`);
+    return res.redirect(`${process.env.FRONTEND_URL}/settings/slack?error=oauth_failed`);
+  }
+});
+
+app.delete('/api/tenants/:id/slack', requireRole('admin', 'super_admin'), async (req, res) => {
+  try {
+    await clearTenantSlackToken(req.params.id);
     return res.status(204).send();
   } catch (err) {
     return res.status(500).json({ error: (err as Error).message });

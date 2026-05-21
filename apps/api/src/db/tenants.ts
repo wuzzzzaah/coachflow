@@ -72,6 +72,39 @@ export async function setTenantWhatsAppToken(tenantId: string, token: string): P
   if (error) throw new Error(`Set tenant WhatsApp token failed: ${error.message}`);
 }
 
+export async function getTenantSlackToken(tenantId: string): Promise<string | null> {
+  const db = supabase();
+  const { data, error } = await db.rpc('get_tenant_slack_token', { p_tenant_id: tenantId });
+  if (error) throw new Error(`Get tenant Slack token failed: ${error.message}`);
+  return data as string | null;
+}
+
+export async function setTenantSlackToken(
+  tenantId: string,
+  token: string,
+  teamId: string,
+  teamName: string,
+): Promise<void> {
+  const db = supabase();
+  const { error: rpcError } = await db.rpc('set_tenant_slack_token', {
+    p_tenant_id: tenantId,
+    p_token: token,
+  });
+  if (rpcError) throw new Error(`Set tenant Slack token failed: ${rpcError.message}`);
+
+  const { error: updateError } = await db
+    .from('tenants')
+    .update({ slack_team_id: teamId, slack_team_name: teamName })
+    .eq('id', tenantId);
+  if (updateError) throw new Error(`Update tenant Slack team info failed: ${updateError.message}`);
+}
+
+export async function clearTenantSlackToken(tenantId: string): Promise<void> {
+  const db = supabase();
+  const { error } = await db.rpc('clear_tenant_slack_token', { p_tenant_id: tenantId });
+  if (error) throw new Error(`Clear tenant Slack token failed: ${error.message}`);
+}
+
 export async function upsertTenantPrompt(tenantId: string, key: string, content: string): Promise<void> {
   const db = supabase();
   const { error } = await db

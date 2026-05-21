@@ -26,6 +26,7 @@ export default async function AdminLayout({
     { name: 'Prompts', href: '/prompts' },
     { name: 'Notifications', href: '/notifications' },
     { name: 'Alert Rules', href: '/settings/alerts' },
+    { name: 'Slack', href: '/settings/slack' },
     { name: 'Webhooks', href: '/webhooks' },
     { name: 'Tenants', href: '/tenants' },
   ]
