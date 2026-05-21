@@ -33,6 +33,7 @@ import { generateScormPackage } from './export/scorm';
 import { eraseUser, exportUserData } from './db/gdpr';
 import { writeAuditLog, getAuditLog } from './db/auditLog';
 import { getNotificationConfig, upsertNotificationConfig } from './db/notifications';
+import { listAlertRules, upsertAlertRule, deleteAlertRule } from './db/alertRules';
 import { notifyIdleUser } from './notifications/notify';
 import { deliverScheduledSteps } from './scheduler/deliverScheduled';
 import {
@@ -57,6 +58,8 @@ import {
   createTenantWebhookSchema,
   promptKeySchema,
   notificationConfigSchema,
+  createAlertRuleSchema,
+  updateAlertRuleSchema,
 } from '@coachflow/shared';
 
 // Session store — InMemorySessionStore is the default. Swap to RedisSessionStore in
@@ -280,6 +283,97 @@ app.put('/api/notifications/config', requireRole('admin'), async (req, res) => {
 
     const config = await upsertNotificationConfig(parsed.data.tenant_id, parsed.data);
     return res.json(config);
+  } catch (err) {
+    return res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+// Alert Rules APIs
+app.get('/api/alert-rules', requireRole('admin'), async (req, res) => {
+  try {
+    const tenantId = (req.query.tenantId as string) ?? process.env.DEFAULT_TENANT_ID ?? '';
+    if (!tenantId) return res.status(400).json({ error: 'tenantId query param required' });
+
+    const rules = await listAlertRules(tenantId);
+    return res.json(rules);
+  } catch (err) {
+    return res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+app.post('/api/alert-rules', requireRole('admin'), async (req, res) => {
+  try {
+    const tenantId = (req.query.tenantId as string) ?? process.env.DEFAULT_TENANT_ID ?? '';
+    if (!tenantId) return res.status(400).json({ error: 'tenantId query param required' });
+
+    const parsed = createAlertRuleSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'invalid input', details: parsed.error });
+    }
+
+    const rule = await upsertAlertRule(tenantId, parsed.data);
+
+    writeAuditLog({
+      tenantId,
+      actorId: req.user!.id,
+      actorEmail: req.user!.email,
+      action: 'alert_rule.create',
+      resource: 'alert_rule',
+      resourceId: rule.id,
+      metadata: parsed.data,
+    });
+
+    return res.status(201).json(rule);
+  } catch (err) {
+    return res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+app.put('/api/alert-rules/:id', requireRole('admin'), async (req, res) => {
+  try {
+    const tenantId = (req.query.tenantId as string) ?? process.env.DEFAULT_TENANT_ID ?? '';
+    if (!tenantId) return res.status(400).json({ error: 'tenantId query param required' });
+
+    const parsed = updateAlertRuleSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'invalid input', details: parsed.error });
+    }
+
+    const rule = await upsertAlertRule(tenantId, { ...parsed.data, id: req.params.id });
+
+    writeAuditLog({
+      tenantId,
+      actorId: req.user!.id,
+      actorEmail: req.user!.email,
+      action: 'alert_rule.update',
+      resource: 'alert_rule',
+      resourceId: rule.id,
+      metadata: parsed.data,
+    });
+
+    return res.json(rule);
+  } catch (err) {
+    return res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+app.delete('/api/alert-rules/:id', requireRole('admin'), async (req, res) => {
+  try {
+    const tenantId = (req.query.tenantId as string) ?? process.env.DEFAULT_TENANT_ID ?? '';
+    if (!tenantId) return res.status(400).json({ error: 'tenantId query param required' });
+
+    await deleteAlertRule(tenantId, req.params.id);
+
+    writeAuditLog({
+      tenantId,
+      actorId: req.user!.id,
+      actorEmail: req.user!.email,
+      action: 'alert_rule.delete',
+      resource: 'alert_rule',
+      resourceId: req.params.id,
+    });
+
+    return res.status(204).send();
   } catch (err) {
     return res.status(500).json({ error: (err as Error).message });
   }

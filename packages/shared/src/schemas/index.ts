@@ -193,3 +193,24 @@ export const notificationConfigSchema = z.object({
 });
 
 export type NotificationConfig = z.infer<typeof notificationConfigSchema>;
+
+export const alertRuleSchema = z.object({
+  id: z.string().uuid(),
+  tenant_id: z.string().uuid(),
+  metric: z.enum(['drop_off', 'idle_user', 'low_score']),
+  threshold: z.number().positive(),
+  channel: z.enum(['slack', 'email']),
+  enabled: z.boolean(),
+  created_at: z.string(),
+});
+
+export type AlertRule = z.infer<typeof alertRuleSchema>;
+
+export const createAlertRuleSchema = z.object({
+  metric: z.enum(['drop_off', 'idle_user', 'low_score']),
+  threshold: z.number().positive(),
+  channel: z.enum(['slack', 'email']),
+  enabled: z.boolean().optional(),
+});
+
+export const updateAlertRuleSchema = createAlertRuleSchema.partial();
