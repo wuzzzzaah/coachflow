@@ -18,7 +18,14 @@ import { getUsersExportData, getUserExportData } from './db/export';
 import { getSessionMessages, getUserSessions, getSessionById } from './db/sessions';
 import { listTenants, createTenant, getTenantById, updateTenant, setTenantWhatsAppToken, getTenantWhatsAppToken, getTenantPromptOverrides, upsertTenantPrompt, deleteTenantPrompt } from './db/tenants';
 import { listWebhooks, createWebhook, deleteWebhook } from './db/webhooks';
-import { getCompletionRates, getStepFunnel, getScoreDistribution } from './db/analytics';
+import {
+  getCompletionRates,
+  getStepFunnel,
+  getScoreDistribution,
+  getCohortCompletionRate,
+  getCohortScoreDistribution,
+  getCohortMemberProgress,
+} from './db/analytics';
 import { getIdleUsers, logReminder } from './db/reminders';
 import { writeAuditLog, getAuditLog } from './db/auditLog';
 import { getNotificationConfig, upsertNotificationConfig } from './db/notifications';
@@ -110,6 +117,23 @@ app.get('/api/tenants', requireRole('super_admin'), async (req, res) => {
   try {
     const tenants = await listTenants();
     return res.json(tenants);
+  } catch (err) {
+    return res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+app.get('/api/cohorts/:id/analytics', requireRole('admin'), async (req, res) => {
+  try {
+    const tenantId = (req.query.tenantId as string) ?? process.env.DEFAULT_TENANT_ID ?? '';
+    if (!tenantId) return res.status(400).json({ error: 'tenantId query param required' });
+
+    const [completionRate, scoreDistribution, memberProgress] = await Promise.all([
+      getCohortCompletionRate(tenantId, req.params.id),
+      getCohortScoreDistribution(tenantId, req.params.id),
+      getCohortMemberProgress(tenantId, req.params.id),
+    ]);
+
+    return res.json({ completionRate, scoreDistribution, memberProgress });
   } catch (err) {
     return res.status(500).json({ error: (err as Error).message });
   }

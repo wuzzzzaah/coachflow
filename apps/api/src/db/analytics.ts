@@ -151,3 +151,207 @@ export async function getScoreDistribution(tenantId: string, journeyId?: string,
   // Sort alphabetically by dimension name for consistency
   return result.sort((a, b) => a.dimension.localeCompare(b.dimension));
 }
+
+export async function getCohortCompletionRate(tenantId: string, cohortId: string) {
+  const db = supabase();
+
+  // 1. Get cohort and journey info
+  const { data: cohort, error: cohortErr } = await db
+    .from('cohorts')
+    .select('name, journey_id, journeys(title)')
+    .eq('id', cohortId)
+    .eq('tenant_id', tenantId)
+    .single();
+
+  if (cohortErr) throw new Error(`Failed to fetch cohort: ${cohortErr.message}`);
+
+  // 2. Get total members
+  const { count: totalMembers, error: membersErr } = await db
+    .from('cohort_members')
+    .select('*', { count: 'exact', head: true })
+    .eq('cohort_id', cohortId);
+
+  if (membersErr) throw new Error(`Failed to count cohort members: ${membersErr.message}`);
+
+  // 3. Get members who completed the journey
+  const { data: members, error: membersListErr } = await db
+    .from('cohort_members')
+    .select('user_id')
+    .eq('cohort_id', cohortId);
+
+  if (membersListErr) throw new Error(`Failed to list cohort members: ${membersListErr.message}`);
+
+  const userIds = members.map(m => m.user_id);
+  if (userIds.length === 0) {
+    return {
+      cohortId,
+      cohortName: cohort.name,
+      journeyTitle: (cohort.journeys as any)?.title,
+      totalMembers: 0,
+      completedMembers: 0,
+      completionRate: 0,
+    };
+  }
+
+  const { count: completedMembers, error: completedErr } = await db
+    .from('user_journeys')
+    .select('*', { count: 'exact', head: true })
+    .eq('journey_id', cohort.journey_id)
+    .eq('status', 'completed')
+    .in('user_id', userIds);
+
+  if (completedErr) throw new Error(`Failed to count completed members: ${completedErr.message}`);
+
+  const total = totalMembers || 0;
+  const completed = completedMembers || 0;
+  const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+  return {
+    cohortId,
+    cohortName: cohort.name,
+    journeyTitle: (cohort.journeys as any)?.title,
+    totalMembers: total,
+    completedMembers: completed,
+    completionRate,
+  };
+}
+
+export async function getCohortScoreDistribution(tenantId: string, cohortId: string) {
+  const db = supabase();
+
+  // 1. Get cohort and members
+  const { data: cohort, error: cohortErr } = await db
+    .from('cohorts')
+    .select('journey_id')
+    .eq('id', cohortId)
+    .eq('tenant_id', tenantId)
+    .single();
+
+  if (cohortErr) throw new Error(`Failed to fetch cohort: ${cohortErr.message}`);
+
+  const { data: members, error: membersErr } = await db
+    .from('cohort_members')
+    .select('user_id')
+    .eq('cohort_id', cohortId);
+
+  if (membersErr) throw new Error(`Failed to fetch cohort members: ${membersErr.message}`);
+
+  const userIds = members.map(m => m.user_id);
+  const buckets = [
+    { range: '0-2', count: 0 },
+    { range: '3-4', count: 0 },
+    { range: '5-6', count: 0 },
+    { range: '7-8', count: 0 },
+    { range: '9-10', count: 0 },
+  ];
+
+  if (userIds.length === 0) return buckets;
+
+  // 2. Get scores for these users in this journey
+  const { data: scores, error: scoresErr } = await db
+    .from('scores')
+    .select('score')
+    .eq('journey_id', cohort.journey_id)
+    .in('user_id', userIds);
+
+  if (scoresErr) throw new Error(`Failed to fetch scores: ${scoresErr.message}`);
+
+  for (const row of scores) {
+    const s = row.score;
+    if (s <= 2) buckets[0].count++;
+    else if (s <= 4) buckets[1].count++;
+    else if (s <= 6) buckets[2].count++;
+    else if (s <= 8) buckets[3].count++;
+    else buckets[4].count++;
+  }
+
+  return buckets;
+}
+
+export async function getCohortMemberProgress(tenantId: string, cohortId: string) {
+  const db = supabase();
+
+  // 1. Get cohort and journey info
+  const { data: cohort, error: cohortErr } = await db
+    .from('cohorts')
+    .select('journey_id')
+    .eq('id', cohortId)
+    .eq('tenant_id', tenantId)
+    .single();
+
+  if (cohortErr) throw new Error(`Failed to fetch cohort: ${cohortErr.message}`);
+
+  // 2. Get members with user details
+  const { data: members, error: membersErr } = await db
+    .from('cohort_members')
+    .select('user_id, users(whatsapp_number)')
+    .eq('cohort_id', cohortId);
+
+  if (membersErr) throw new Error(`Failed to fetch cohort members: ${membersErr.message}`);
+
+  if (members.length === 0) return [];
+
+  const userIds = members.map(m => m.user_id);
+
+  // 3. Get total steps
+  const { data: steps, error: stepsErr } = await db
+    .from('journey_steps')
+    .select('id')
+    .eq('journey_id', cohort.journey_id)
+    .is('deleted_at', null);
+
+  if (stepsErr) throw new Error(`Failed to fetch journey steps: ${stepsErr.message}`);
+  const totalSteps = steps.length;
+
+  // 4. Get completed sessions
+  const { data: sessions, error: sessionsErr } = await db
+    .from('sessions')
+    .select('user_id, step_id, started_at, ended_at')
+    .eq('journey_id', cohort.journey_id)
+    .in('user_id', userIds);
+
+  if (sessionsErr) throw new Error(`Failed to fetch sessions: ${sessionsErr.message}`);
+
+  // 5. Get scores to calculate average
+  const { data: scores, error: scoresErr } = await db
+    .from('scores')
+    .select('user_id, score')
+    .eq('journey_id', cohort.journey_id)
+    .in('user_id', userIds);
+
+  if (scoresErr) throw new Error(`Failed to fetch scores: ${scoresErr.message}`);
+
+  // 6. Aggregate results
+  const result = members.map((member: any) => {
+    const userSessions = sessions.filter(s => s.user_id === member.user_id);
+    const completedStepIds = new Set(
+      userSessions
+        .filter(s => s.ended_at !== null)
+        .map(s => s.step_id)
+        .filter(Boolean)
+    );
+
+    const userScores = scores.filter(s => s.user_id === member.user_id);
+    const avgScore = userScores.length > 0
+      ? Number((userScores.reduce((acc, s) => acc + s.score, 0) / userScores.length).toFixed(1))
+      : 0;
+
+    const sortedSessions = [...userSessions].sort((a, b) => {
+      const timeA = new Date(a.ended_at || a.started_at).getTime();
+      const timeB = new Date(b.ended_at || b.started_at).getTime();
+      return timeB - timeA;
+    });
+    const lastActiveAt = sortedSessions.length > 0 ? (sortedSessions[0].ended_at || sortedSessions[0].started_at) : null;
+
+    return {
+      userId: member.user_id,
+      phone: member.users?.whatsapp_number,
+      completedSteps: completedStepIds.size,
+      totalSteps,
+      avgScore,
+      lastActiveAt,
+    };
+  });
+
+  return result.sort((a, b) => b.completedSteps - a.completedSteps);
+}
