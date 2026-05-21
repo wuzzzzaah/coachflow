@@ -19,6 +19,7 @@ const sampleJourney: JourneyRow = {
   description: 'A leadership journey.',
   estimated_minutes: 45,
   version_number: 1,
+  parent_journey_id: null,
   status: 'published',
   is_template: false,
   schedule_type: 'manual',
