@@ -16,6 +16,47 @@
 
 #### `AnalyticsPage()`
 
+## apps/admin/app/(admin)/audit-log/page.tsx
+<a id="apps-admin-app-admin-audit-log-page-tsx"></a>
+
+### Functions
+
+#### `AuditLogPage()`
+
+## apps/admin/app/(admin)/cohorts/[id]/_components/CohortDetailClientPage.tsx
+<a id="apps-admin-app-admin-cohorts-id-components-cohortdetailclientpage-tsx"></a>
+
+### Functions
+
+#### `CohortDetailClientPage({ cohort, initialMembers, allUsers, tenantId }: { cohort: any, initialMembers: any[], allUsers: any[], tenantId: string })`
+
+## apps/admin/app/(admin)/cohorts/[id]/page.tsx
+<a id="apps-admin-app-admin-cohorts-id-page-tsx"></a>
+
+### Functions
+
+#### `async CohortDetailPage({
+  params,
+  searchParams
+}: {
+  params: Promise<{ id: string }>,
+  searchParams: Promise<{ tenantId?: string }>
+})`
+
+## apps/admin/app/(admin)/cohorts/_components/CohortsClientPage.tsx
+<a id="apps-admin-app-admin-cohorts-components-cohortsclientpage-tsx"></a>
+
+### Functions
+
+#### `CohortsClientPage({ initialCohorts, journeys, tenantId }: { initialCohorts: any[], journeys: any[], tenantId: string })`
+
+## apps/admin/app/(admin)/cohorts/page.tsx
+<a id="apps-admin-app-admin-cohorts-page-tsx"></a>
+
+### Functions
+
+#### `async CohortsPage({ searchParams }: { searchParams: Promise<{ tenantId?: string }> })`
+
 ## apps/admin/app/(admin)/journeys/[id]/page.tsx
 <a id="apps-admin-app-admin-journeys-id-page-tsx"></a>
 
@@ -28,7 +69,7 @@
 
 ### Functions
 
-#### `JourneysClientPage({ initialJourneys, tenantId }: { initialJourneys: JourneyRow[], tenantId: string })`
+#### `JourneysClientPage({ initialJourneys, initialTemplates, tenantId }: { initialJourneys: JourneyRow[], initialTemplates: JourneyRow[], tenantId: string })`
 
 ## apps/admin/app/(admin)/journeys/page.tsx
 <a id="apps-admin-app-admin-journeys-page-tsx"></a>
@@ -48,6 +89,13 @@
   children: React.ReactNode
 })`
 
+## apps/admin/app/(admin)/notifications/page.tsx
+<a id="apps-admin-app-admin-notifications-page-tsx"></a>
+
+### Functions
+
+#### `NotificationsPage()`
+
 ## apps/admin/app/(admin)/page.tsx
 <a id="apps-admin-app-admin-page-tsx"></a>
 
@@ -61,6 +109,13 @@
 ### Functions
 
 #### `PromptsPage()`
+
+## apps/admin/app/(admin)/settings/alerts/page.tsx
+<a id="apps-admin-app-admin-settings-alerts-page-tsx"></a>
+
+### Functions
+
+#### `AlertRulesPage()`
 
 ## apps/admin/app/(admin)/tenants/_components/TenantsClientPage.tsx
 <a id="apps-admin-app-admin-tenants-components-tenantsclientpage-tsx"></a>
@@ -87,12 +142,37 @@
   params: Promise<{ id: string }>;
 })`
 
+## apps/admin/app/(admin)/users/[id]/sessions/[sessionId]/page.tsx
+<a id="apps-admin-app-admin-users-id-sessions-sessionid-page-tsx"></a>
+
+### Functions
+
+#### `SessionTranscriptPage({
+  params,
+}: {
+  params: Promise<{ id: string; sessionId: string }>;
+})`
+
 ## apps/admin/app/(admin)/users/page.tsx
 <a id="apps-admin-app-admin-users-page-tsx"></a>
 
 ### Functions
 
 #### `UsersPage()`
+
+## apps/admin/app/(admin)/webhooks/_components/WebhooksClientPage.tsx
+<a id="apps-admin-app-admin-webhooks-components-webhooksclientpage-tsx"></a>
+
+### Functions
+
+#### `WebhooksClientPage({ initialWebhooks, tenantId }: WebhooksClientPageProps)`
+
+## apps/admin/app/(admin)/webhooks/page.tsx
+<a id="apps-admin-app-admin-webhooks-page-tsx"></a>
+
+### Functions
+
+#### `async WebhooksPage()`
 
 ## apps/admin/app/layout.tsx
 <a id="apps-admin-app-layout-tsx"></a>
@@ -122,6 +202,13 @@
 ### Functions
 
 #### `async apiFetch(path: string, init: RequestInit)`
+
+## apps/admin/lib/downloadCsv.ts
+<a id="apps-admin-lib-downloadcsv-ts"></a>
+
+### Functions
+
+#### `async downloadCsv(url: string, filename: string)`
 
 ## apps/admin/lib/supabase/client.ts
 <a id="apps-admin-lib-supabase-client-ts"></a>
@@ -183,8 +270,40 @@
 
 - `systemPrompt`
 
+## apps/api/src/db/__tests__/analytics.test.ts
+<a id="apps-api-src-db-tests-analytics-test-ts"></a>
+
+## apps/api/src/db/__tests__/gdpr.test.ts
+<a id="apps-api-src-db-tests-gdpr-test-ts"></a>
+
 ## apps/api/src/db/__tests__/journeyLoader.test.ts
 <a id="apps-api-src-db-tests-journeyloader-test-ts"></a>
+
+## apps/api/src/db/__tests__/journeyVersions.test.ts
+<a id="apps-api-src-db-tests-journeyversions-test-ts"></a>
+
+## apps/api/src/db/__tests__/journeys.test.ts
+<a id="apps-api-src-db-tests-journeys-test-ts"></a>
+
+## apps/api/src/db/__tests__/metrics.test.ts
+<a id="apps-api-src-db-tests-metrics-test-ts"></a>
+
+## apps/api/src/db/__tests__/reminders.test.ts
+<a id="apps-api-src-db-tests-reminders-test-ts"></a>
+
+## apps/api/src/db/__tests__/scores.test.ts
+<a id="apps-api-src-db-tests-scores-test-ts"></a>
+
+## apps/api/src/db/alertRules.ts
+<a id="apps-api-src-db-alertrules-ts"></a>
+
+### Functions
+
+#### `async listAlertRules(tenantId: string) -> Promise<AlertRule[]>`
+
+#### `async upsertAlertRule(tenantId: string, rule: Partial<AlertRule> & { id?: string }) -> Promise<AlertRule>`
+
+#### `async deleteAlertRule(tenantId: string, id: string) -> Promise<void>`
 
 ## apps/api/src/db/analytics.ts
 <a id="apps-api-src-db-analytics-ts"></a>
@@ -197,18 +316,87 @@
 
 #### `async getScoreDistribution(tenantId: string, journeyId: string, since: string)`
 
+#### `async getCohortCompletionRate(tenantId: string, cohortId: string)`
+
+#### `async getCohortScoreDistribution(tenantId: string, cohortId: string)`
+
+#### `async getCohortMemberProgress(tenantId: string, cohortId: string)`
+
+## apps/api/src/db/auditLog.ts
+<a id="apps-api-src-db-auditlog-ts"></a>
+
+### Functions
+
+#### `async writeAuditLog(entry: AuditEntry) -> Promise<void>`
+
+#### `async getAuditLog(tenantId: string, limit: number = 50) -> Promise<AuditLog[]>`
+
+### Constants
+
+- `AuditEntry`: `interface`
+
+## apps/api/src/db/cohorts.ts
+<a id="apps-api-src-db-cohorts-ts"></a>
+
+### Functions
+
+#### `async listCohorts(tenantId: string)`
+
+#### `async getCohort(cohortId: string, tenantId: string)`
+
+#### `async createCohort(tenantId: string, name: string, journeyId: string, startsAt: string, endsAt: string)`
+
+#### `async deleteCohort(cohortId: string, tenantId: string)`
+
+#### `async addCohortMembers(cohortId: string, userIds: string[])`
+
+#### `async removeCohortMember(cohortId: string, userId: string)`
+
+#### `async getCohortProgress(cohortId: string, tenantId: string)`
+
+## apps/api/src/db/export.ts
+<a id="apps-api-src-db-export-ts"></a>
+
+### Functions
+
+#### `async getUsersExportData(tenantId: string)`
+
+#### `async getUserExportData(userId: string, tenantId: string)`
+
+## apps/api/src/db/gdpr.ts
+<a id="apps-api-src-db-gdpr-ts"></a>
+
+### Functions
+
+#### `async eraseUser(userId: string, tenantId: string, actorId: string, actorEmail: string) -> Promise<void>`
+
+Anonymize user PII and delete sensitive conversation data.
+
+#### `async exportUserData(userId: string, tenantId: string) -> Promise<UserDataExport>`
+
+Export all data stored about a user.
+
 ## apps/api/src/db/journeyLoader.ts
 <a id="apps-api-src-db-journeyloader-ts"></a>
 
 ### Functions
 
-#### `async listJourneys(tenantId: string) -> Promise<JourneyConfig[]>`
+#### `async listJourneys(tenantId: string, includeDrafts = false) -> Promise<JourneyConfig[]>`
 
 #### `async getJourney(tenantId: string, journeyId: string) -> Promise<JourneyConfig | null>`
 
-#### `async createJourney(tenantId: string, journeyData: { id: string; title: string; description?: string; estimated_minutes?: number }) -> Promise<void>`
+#### `async createJourney(tenantId: string, journeyData: { id: string; title: string; description?: string; estimated_minutes?: number; status?: 'draft' | 'published' }) -> Promise<void>`
 
-#### `async updateJourney(tenantId: string, journeyId: string, journeyData: { title?: string; description?: string; estimated_minutes?: number }) -> Promise<void>`
+#### `async updateJourney(tenantId: string, journeyId: string, journeyData: {
+    title?: string;
+    description?: string;
+    estimated_minutes?: number;
+    status?: 'draft' | 'published';
+    is_template?: boolean;
+    schedule_type?: 'manual' | 'daily' | 'weekly';
+    schedule_hour?: number | null;
+    schedule_day?: number | null;
+  }) -> Promise<void>`
 
 #### `async deleteJourney(tenantId: string, journeyId: string) -> Promise<void>`
 
@@ -228,6 +416,8 @@
     min_turns?: number;
     step_guidance?: string;
     scoring_criteria?: string[] | null;
+    media_url?: string | null;
+    media_type?: 'image' | 'document' | 'audio' | 'video' | null;
   }) -> Promise<void>`
 
 #### `async updateStep(tenantId: string, journeyId: string, stepId: string, stepData: {
@@ -237,11 +427,36 @@
     min_turns?: number;
     step_guidance?: string;
     scoring_criteria?: string[] | null;
+    media_url?: string | null;
+    media_type?: 'image' | 'document' | 'audio' | 'video' | null;
   }) -> Promise<void>`
 
 #### `async deleteStep(tenantId: string, journeyId: string, stepId: string) -> Promise<void>`
 
 #### `async reorderSteps(tenantId: string, journeyId: string, stepIds: string[]) -> Promise<void>`
+
+## apps/api/src/db/journeyVersions.ts
+<a id="apps-api-src-db-journeyversions-ts"></a>
+
+### Functions
+
+#### `async snapshotJourney(tenantId: string, journeyId: string) -> Promise<string>`
+
+Creates a snapshot of a journey and its steps.
+Pins it to parent_journey_id, increments version, sets status to 'draft'.
+
+#### `async getActiveVersionForUser(userId: string, journeyId: string, tenantId: string) -> Promise<string>`
+
+Returns the correct journey ID for a user.
+If they are pinned to a version, returns that version's ID.
+
+#### `async listJourneyVersions(tenantId: string, journeyId: string)`
+
+Lists all snapshots (versions) of a journey.
+
+#### `async getActiveUserCount(tenantId: string, journeyId: string) -> Promise<number>`
+
+Returns count of active users currently on the main version of the journey.
 
 ## apps/api/src/db/journeys.ts
 <a id="apps-api-src-db-journeys-ts"></a>
@@ -255,6 +470,69 @@ Find or create an active user_journey row for this user + journey.
 #### `async advanceUserJourney(userJourneyId: string, nextStepIndex: number) -> Promise<void>`
 
 #### `async completeUserJourney(userJourneyId: string) -> Promise<void>`
+
+#### `async listTemplates(tenantId: string) -> Promise<JourneyRow[]>`
+
+#### `async cloneJourney(sourceId: string, tenantId: string, title: string) -> Promise<JourneyRow>`
+
+## apps/api/src/db/metrics.ts
+<a id="apps-api-src-db-metrics-ts"></a>
+
+### Functions
+
+#### `async getActiveSessions(tenantId: string, windowMinutes: number = 30) -> Promise<number>`
+
+getActiveSessions(tenantId, windowMinutes) — users with a session updated in the last N minutes.
+
+#### `async getStepDropOff(tenantId: string, journeyId: string)`
+
+getStepDropOff(tenantId, journeyId) — per-step completion counts -> drop-off % array.
+Returns array of { stepIndex, reached, dropped, dropRate }.
+
+#### `async getStuckUsers(tenantId: string, thresholdHours: number = 24)`
+
+getStuckUsers(tenantId, thresholdHours) — users whose updated_at on user_journeys is older than N hours and journey is in_progress (active).
+Returns array of user IDs + hours idle.
+
+## apps/api/src/db/notifications.ts
+<a id="apps-api-src-db-notifications-ts"></a>
+
+### Functions
+
+#### `async getNotificationConfig(tenantId: string) -> Promise<NotificationConfig | null>`
+
+#### `async getResendApiKey(tenantId: string) -> Promise<string | null>`
+
+#### `async upsertNotificationConfig(tenantId: string, config: Partial<NotificationConfig>) -> Promise<NotificationConfig>`
+
+## apps/api/src/db/reminders.ts
+<a id="apps-api-src-db-reminders-ts"></a>
+
+### Functions
+
+#### `async getIdleUsers(tenantId: string, idleHours: number = 48, reminderCooldownHours: number = 24)`
+
+Find users for a tenant who:
+1. Have an active journey (current_journey_id IS NOT NULL).
+2. Have not sent any messages in the last `idleHours`.
+3. Have not received a reminder in the last `reminderCooldownHours`.
+
+#### `async logReminder(tenantId: string, userId: string, type: string = 'nudge')`
+
+Log a reminder send event.
+
+## apps/api/src/db/scheduler.ts
+<a id="apps-api-src-db-scheduler-ts"></a>
+
+### Functions
+
+#### `async getScheduledJourneys(tenantId: string) -> Promise<JourneyRow[]>`
+
+#### `async getEnrolledUsers(tenantId: string, journeyId: string)`
+
+#### `async hasDeliveredToday(tenantId: string, userId: string, journeyId: string, stepIndex: number, scheduleType: 'daily' | 'weekly') -> Promise<boolean>`
+
+#### `async logDelivery(tenantId: string, userId: string, journeyId: string, stepIndex: number) -> Promise<void>`
 
 ## apps/api/src/db/scores.ts
 <a id="apps-api-src-db-scores-ts"></a>
@@ -271,9 +549,13 @@ Find or create an active user_journey row for this user + journey.
 
 Persist the evaluation result of an assessment step.
 
-#### `async getScoresForUser(userId: string)`
+#### `async getScoresForUser(userId: string, journeyId: string)`
 
 Retrieve all scores for a given user, newest first.
+
+#### `async getLatestScoreForStep(userId: string, journeyId: string, stepId: string) -> Promise<number | null>`
+
+Retrieve the latest score for a specific user, journey, and step.
 
 ## apps/api/src/db/sessions.ts
 <a id="apps-api-src-db-sessions-ts"></a>
@@ -304,6 +586,14 @@ End a session with an optional summary.
 Append a message to the conversation log for a session.
 
 #### `async getSessionMessages(sessionId: string)`
+
+#### `async getLatestActiveSession(userId: string)`
+
+Find the most recent un-ended session for a user.
+
+#### `async getSessionById(tenantId: string, sessionId: string)`
+
+#### `async getUserSessions(tenantId: string, userId: string)`
 
 ## apps/api/src/db/supabaseClient.ts
 <a id="apps-api-src-db-supabaseclient-ts"></a>
@@ -369,6 +659,36 @@ Returns true if this is the first time we've seen it, false if duplicate.
 
 #### `async getUserProgress(tenantId: string, userId: string)`
 
+## apps/api/src/db/webMessages.ts
+<a id="apps-api-src-db-webmessages-ts"></a>
+
+### Functions
+
+#### `async storeOutboundWebMessage(tenantId: string, userId: string, content: any) -> Promise<void>`
+
+Store an outbound message for a web user.
+
+#### `async pollAndClearWebMessages(tenantId: string, userId: string) -> Promise<WebMessageRecord[]>`
+
+Poll and clear pending outbound messages for a user.
+
+### Constants
+
+- `WebMessageRecord`: `interface`
+
+## apps/api/src/db/webhooks.ts
+<a id="apps-api-src-db-webhooks-ts"></a>
+
+### Functions
+
+#### `async listWebhooks(tenantId: string) -> Promise<TenantWebhook[]>`
+
+#### `async createWebhook(tenantId: string, webhook: { url: string; secret: string; events: string[] }) -> Promise<TenantWebhook>`
+
+#### `async deleteWebhook(tenantId: string, id: string) -> Promise<void>`
+
+#### `async getEnabledWebhooksForEvent(tenantId: string, event: string) -> Promise<TenantWebhook[]>`
+
 ## apps/api/src/engine/__tests__/contextBuilder.test.ts
 <a id="apps-api-src-engine-tests-contextbuilder-test-ts"></a>
 
@@ -403,7 +723,7 @@ Build a readable transcript string (used in step-end summaries).
 
 ### Functions
 
-#### `async handleInbound(msg: InboundMessage, tenantId: string, senderCreds: SenderCredentials) -> Promise<void>`
+#### `async handleInbound(msg: InboundMessage, tenantId: string, adapter: IWhatsAppAdapter) -> Promise<void>`
 
 Public entry point — handle a single inbound message end-to-end.
 
@@ -514,6 +834,18 @@ TTL is managed by Redis — no sweeper needed.
 ## apps/api/src/engine/sessionStore.ts
 <a id="apps-api-src-engine-sessionstore-ts"></a>
 
+## apps/api/src/export/__tests__/scorm.test.ts
+<a id="apps-api-src-export-tests-scorm-test-ts"></a>
+
+## apps/api/src/export/scorm.ts
+<a id="apps-api-src-export-scorm-ts"></a>
+
+### Functions
+
+#### `async generateScormPackage(tenantId: string, journeyId: string) -> Promise<Buffer>`
+
+Generates a SCORM 1.2 zip package for a journey.
+
 ## apps/api/src/index.ts
 <a id="apps-api-src-index-ts"></a>
 
@@ -536,8 +868,52 @@ Must be used after requireAuth.
 
 - `AuthUser`: `interface`
 
+## apps/api/src/notifications/email.ts
+<a id="apps-api-src-notifications-email-ts"></a>
+
+### Functions
+
+#### `async sendEmail({ to, subject, html, resendApiKey }: SendEmailParams) -> Promise<void>`
+
+Sends an email via Resend API using fetch.
+Fire-and-forget: logs errors but never throws.
+
+## apps/api/src/notifications/notify.ts
+<a id="apps-api-src-notifications-notify-ts"></a>
+
+### Functions
+
+#### `async notifyJourneyComplete(tenantId: string, userId: string, journeyTitle: string) -> Promise<void>`
+
+#### `async notifyLowScore(tenantId: string, userId: string, journeyTitle: string, score: number) -> Promise<void>`
+
+#### `async notifyIdleUser(tenantId: string, userId: string, phone: string) -> Promise<void>`
+
+## apps/api/src/scheduler/__tests__/deliverScheduled.test.ts
+<a id="apps-api-src-scheduler-tests-deliverscheduled-test-ts"></a>
+
+## apps/api/src/scheduler/deliverScheduled.ts
+<a id="apps-api-src-scheduler-deliverscheduled-ts"></a>
+
+### Functions
+
+#### `async deliverScheduledSteps(tenantId: string)`
+
+## apps/api/src/webhooks/deliver.ts
+<a id="apps-api-src-webhooks-deliver-ts"></a>
+
+### Functions
+
+#### `async deliverEvent(tenantId: string, event: string, payload: Record<string, any>) -> Promise<void>`
+
 ## apps/api/src/whatsapp/__tests__/parser.test.ts
 <a id="apps-api-src-whatsapp-tests-parser-test-ts"></a>
+
+## apps/api/src/whatsapp/__tests__/sender.test.ts
+<a id="apps-api-src-whatsapp-tests-sender-test-ts"></a>
+
+## apps/api/src/whatsapp/__tests__/webAdapter.test.ts
+<a id="apps-api-src-whatsapp-tests-webadapter-test-ts"></a>
 
 ## apps/api/src/whatsapp/parser.ts
 <a id="apps-api-src-whatsapp-parser-ts"></a>
@@ -553,6 +929,8 @@ Status updates and empty payloads return an empty array.
 <a id="apps-api-src-whatsapp-sender-ts"></a>
 
 ### Functions
+
+#### `async sendMediaMessage(to: string, mediaType: 'image' | 'document' | 'audio' | 'video', mediaUrl: string, caption: string, creds: SenderCredentials) -> Promise<void>`
 
 #### `async sendTextMessage(to: string, text: string, creds: SenderCredentials) -> Promise<void>`
 
@@ -578,9 +956,28 @@ Status updates and empty payloads return an empty array.
 - `MetaContact`: `interface`
 - `MetaStatus`: `interface`
 - `MetaWebhookPayload`: `interface`
-- `InboundMessage`: `interface`
-- `ButtonOption`: `interface`
-- `ListSection`: `interface`
+
+## apps/api/src/whatsapp/webAdapter.ts
+<a id="apps-api-src-whatsapp-webadapter-ts"></a>
+
+### Classes
+
+#### `WebAdapter`
+
+##### Methods
+
+###### `constructor(tenantId: string, userId: string)`
+
+###### `async sendTextMessage(to: string, text: string) -> Promise<void>`
+
+###### `async sendMediaMessage(to: string, mediaType: 'image' | 'document' | 'audio' | 'video', mediaUrl: string, caption: string) -> Promise<void>`
+
+###### `async sendButtonMessage(to: string, body: string, buttons: ButtonOption[]) -> Promise<void>`
+
+###### `async sendListMessage(to: string, body: string, buttonLabel: string, sections: ListSection[]) -> Promise<void>`
+
+###### `async markAsRead(messageId: string) -> Promise<void>`
+
 
 ## apps/api/src/whatsapp/webhook.ts
 <a id="apps-api-src-whatsapp-webhook-ts"></a>
@@ -600,6 +997,28 @@ Rejects with 401 if the signature is missing or invalid.
 #### `receiveWebhook(req: Request, res: Response) -> void`
 
 POST /webhook/whatsapp — Meta inbound messages and status updates.
+
+## apps/api/src/whatsapp/whatsappAdapter.ts
+<a id="apps-api-src-whatsapp-whatsappadapter-ts"></a>
+
+### Classes
+
+#### `WhatsAppAdapter`
+
+##### Methods
+
+###### `constructor(creds: sender.SenderCredentials)`
+
+###### `async sendTextMessage(to: string, text: string) -> Promise<void>`
+
+###### `async sendMediaMessage(to: string, mediaType: 'image' | 'document' | 'audio' | 'video', mediaUrl: string, caption: string) -> Promise<void>`
+
+###### `async sendButtonMessage(to: string, body: string, buttons: ButtonOption[]) -> Promise<void>`
+
+###### `async sendListMessage(to: string, body: string, buttonLabel: string, sections: ListSection[]) -> Promise<void>`
+
+###### `async markAsRead(messageId: string) -> Promise<void>`
+
 
 ## packages/shared/src/contracts/index.ts
 <a id="packages-shared-src-contracts-index-ts"></a>
@@ -634,15 +1053,28 @@ Usage: sessionStoreContract(() => new MyStore())
 - `updateJourneyStepSchema`
 - `reorderStepsSchema`
 - `tenantSchema`
+- `tenantWebhookSchema`
 - `InboundMessageInput`: `type`
 - `AIResponseInput`: `type`
 - `JourneyInput`: `type`
 - `JourneyStepInput`: `type`
 - `TenantInput`: `type`
+- `TenantWebhookInput`: `type`
 - `createTenantSchema`
 - `updateTenantSchema`
+- `createTenantWebhookSchema`
 - `promptKeySchema`
 - `PromptKey`: `type`
+- `cohortSchema`
+- `cohortMemberSchema`
+- `Cohort`: `type`
+- `CohortMember`: `type`
+- `notificationConfigSchema`
+- `NotificationConfig`: `type`
+- `alertRuleSchema`
+- `AlertRule`: `type`
+- `createAlertRuleSchema`
+- `updateAlertRuleSchema`
 
 ## packages/shared/src/types/index.ts
 <a id="packages-shared-src-types-index-ts"></a>
@@ -663,4 +1095,14 @@ Usage: sessionStoreContract(() => new MyStore())
 - `JourneyRow`: `interface`
 - `JourneyStepRow`: `interface`
 - `JourneyPromptRow`: `interface`
+- `TenantWebhook`: `interface`
+- `AuditLog`: `interface`
 - `ISessionStore`: `interface`
+- `UserProgress`: `interface`
+- `UserScore`: `interface`
+- `SessionMessage`: `interface`
+- `UserDataExport`: `interface`
+- `InboundMessage`: `interface`
+- `ButtonOption`: `interface`
+- `ListSection`: `interface`
+- `IWhatsAppAdapter`: `interface`
