@@ -134,24 +134,15 @@ app.post('/webhook/whatsapp', verifySignature, receiveWebhook);
 // Web Channel endpoints
 app.post('/channel/web/receive', async (req, res) => {
   try {
-    const { userId, text, tenantId } = req.body;
-    if (!userId || !text || !tenantId) {
-      return res.status(400).json({ error: 'userId, text, and tenantId are required' });
+    const { userId, tenantId } = req.body;
+    if (!userId || !tenantId) {
+      return res.status(400).json({ error: 'userId and tenantId are required' });
     }
 
     const adapter = new WebAdapter(tenantId, userId);
-    // Web channel uses the userId as the "whatsappNumber" for session lookup
-    await handleInbound(
-      {
-        whatsappNumber: userId,
-        whatsappMessageId: crypto.randomUUID(),
-        kind: 'text' as const,
-        provider: 'web' as const,
-        text,
-      },
-      tenantId,
-      adapter,
-    );
+    const msg = WebAdapter.parseInbound(req.body);
+
+    await handleInbound(msg, tenantId, adapter);
 
     return res.status(200).json({ status: 'ok' });
   } catch (err) {
