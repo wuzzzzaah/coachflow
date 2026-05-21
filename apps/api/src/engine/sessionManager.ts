@@ -17,6 +17,7 @@ export async function createSession(params: {
   tenantId: string;
   userId: string;
   whatsappNumber: string;
+  provider?: 'whatsapp' | 'slack' | 'web';
   initialMode?: FlowState;
 }): Promise<Session> {
   const now = new Date();
@@ -24,6 +25,7 @@ export async function createSession(params: {
     tenantId: params.tenantId,
     userId: params.userId,
     whatsappNumber: params.whatsappNumber,
+    provider: params.provider ?? 'whatsapp',
     currentJourneyId: null,
     currentStepIndex: 0,
     currentMode: params.initialMode ?? 'menu',

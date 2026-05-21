@@ -1,5 +1,5 @@
 import axios, { AxiosError } from 'axios';
-import { ButtonOption, ListSection } from '@coachflow/shared';
+import { ButtonOption, ListSection, IWhatsAppAdapter } from '@coachflow/shared';
 
 const GRAPH_VERSION = 'v19.0';
 const MAX_LEN = 4096;
@@ -60,6 +60,7 @@ export async function sendMediaMessage(
   caption?: string,
   creds?: SenderCredentials,
 ): Promise<void> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const body: any = {
     messaging_product: 'whatsapp',
     recipient_type: 'individual',
@@ -152,3 +153,11 @@ export async function markAsRead(messageId: string, creds?: SenderCredentials): 
     console.warn(`[whatsapp] markAsRead failed: ${(err as Error).message}`);
   }
 }
+
+export const WhatsAppAdapter: IWhatsAppAdapter = {
+  sendTextMessage,
+  sendButtonMessage,
+  sendListMessage,
+  sendMediaMessage,
+  markAsRead,
+};

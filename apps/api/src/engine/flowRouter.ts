@@ -92,6 +92,7 @@ export async function handleInbound(
         tenantId,
         userId: user.id,
         whatsappNumber: msg.whatsappNumber,
+        provider: msg.provider,
         initialMode: created || !user.onboarded_at ? 'onboarding' : 'menu',
       });
     }

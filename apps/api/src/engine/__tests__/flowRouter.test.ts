@@ -1,12 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // ── Mock all external I/O before importing the router ─────────────────────
-vi.mock('../../whatsapp/sender', () => ({
-  sendTextMessage: vi.fn().mockResolvedValue(undefined),
-  sendButtonMessage: vi.fn().mockResolvedValue(undefined),
-  sendListMessage: vi.fn().mockResolvedValue(undefined),
-  markAsRead: vi.fn().mockResolvedValue(undefined),
-}));
+vi.mock('../../whatsapp/sender', () => {
+  const mockAdapter = {
+    sendTextMessage: vi.fn().mockResolvedValue(undefined),
+    sendButtonMessage: vi.fn().mockResolvedValue(undefined),
+    sendListMessage: vi.fn().mockResolvedValue(undefined),
+    sendMediaMessage: vi.fn().mockResolvedValue(undefined),
+    markAsRead: vi.fn().mockResolvedValue(undefined),
+  };
+  return {
+    ...mockAdapter,
+    WhatsAppAdapter: mockAdapter,
+  };
+});
 
 vi.mock('../../db/users', () => ({
   upsertUser: vi.fn(),
@@ -218,7 +225,7 @@ describe('handleInbound — conditional branching', () => {
     await handleInbound({
       whatsappNumber: startMsg.whatsappNumber,
       whatsappMessageId: 'wamid.branch001',
-      kind: 'text',
+      kind: 'text' as const, provider: 'whatsapp',
       text: 'I did my best',
     }, TENANT, adapter);
 
@@ -254,7 +261,7 @@ describe('handleInbound — conditional branching', () => {
     await handleInbound({
       whatsappNumber: startMsg.whatsappNumber,
       whatsappMessageId: 'wamid.nobranch001',
-      kind: 'text',
+      kind: 'text' as const, provider: 'whatsapp',
       text: 'I did great',
     }, TENANT, adapter);
 
@@ -304,7 +311,7 @@ describe('handleInbound — journey completion scorecard', () => {
     const followMsg = {
       whatsappNumber: startMsg.whatsappNumber,
       whatsappMessageId: 'wamid.comp001',
-      kind: 'text' as const,
+      kind: 'text' as const, provider: 'whatsapp' as const,
       text: 'I am done',
     };
 
@@ -340,7 +347,7 @@ describe('handleInbound — idle state handling', () => {
     const msg = {
       whatsappNumber: '14155550001',
       whatsappMessageId: 'wamid.idle001',
-      kind: 'text' as const,
+      kind: 'text' as const, provider: 'whatsapp' as const,
       text: 'What can you do?',
     };
     await handleInbound(msg, TENANT, adapter);
@@ -355,7 +362,7 @@ describe('handleInbound — idle state handling', () => {
     const msg = {
       whatsappNumber: '14155550001',
       whatsappMessageId: 'wamid.start001',
-      kind: 'text' as const,
+      kind: 'text' as const, provider: 'whatsapp' as const,
       text: 'START',
     };
     await handleInbound(msg, TENANT, adapter);
@@ -367,7 +374,7 @@ describe('handleInbound — idle state handling', () => {
     const msg = {
       whatsappNumber: '14155550001',
       whatsappMessageId: 'wamid.none001',
-      kind: 'text' as const,
+      kind: 'text' as const, provider: 'whatsapp' as const,
       text: 'hi',
     };
     await handleInbound(msg, TENANT, adapter);
@@ -393,7 +400,7 @@ describe('handleInbound — session restoration', () => {
     const msg = {
       whatsappNumber: user.whatsapp_number,
       whatsappMessageId: 'wamid.switch001',
-      kind: 'list' as const,
+      kind: 'list' as const, provider: 'whatsapp' as const,
       replyId: 'maritime-leadership-001',
       text: 'Switching',
     };
@@ -428,7 +435,7 @@ describe('handleInbound — session restoration', () => {
     const msg = {
       whatsappNumber: user.whatsapp_number,
       whatsappMessageId: 'wamid.resume001',
-      kind: 'text' as const,
+      kind: 'text' as const, provider: 'whatsapp' as const,
       text: 'Continued thought',
     };
 
@@ -476,7 +483,7 @@ describe('handleInbound — coaching turn', () => {
     const coachMsg = {
       whatsappNumber: msg.whatsappNumber,
       whatsappMessageId: 'wamid.follow001',
-      kind: 'text' as const,
+      kind: 'text' as const, provider: 'whatsapp' as const,
       text: 'I reflect on leadership daily',
     };
     await handleInbound(coachMsg, TENANT, adapter);
@@ -508,7 +515,7 @@ describe('handleInbound — step advancement', () => {
     const followMsg = {
       whatsappNumber: startMsg.whatsappNumber,
       whatsappMessageId: 'wamid.adv001',
-      kind: 'text' as const,
+      kind: 'text' as const, provider: 'whatsapp' as const,
       text: 'I am ready',
     };
     await handleInbound(followMsg, TENANT, adapter);
