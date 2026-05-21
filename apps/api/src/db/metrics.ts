@@ -77,19 +77,27 @@ export async function getStuckUsers(tenantId: string, thresholdHours: number = 2
 
   const { data, error } = await db
     .from('user_journeys')
-    .select('user_id, updated_at')
+    .select(`
+      user_id,
+      updated_at,
+      users:user_id (display_name, whatsapp_number),
+      journeys:journey_id (title)
+    `)
     .eq('tenant_id', tenantId)
     .eq('status', 'active')
     .lt('updated_at', threshold);
 
   if (error) throw new Error(`getStuckUsers failed: ${error.message}`);
 
-  return (data || []).map(uj => {
+  return (data || []).map((uj: any) => {
     const lastUpdate = new Date(uj.updated_at).getTime();
     const hoursIdle = Math.floor((Date.now() - lastUpdate) / (1000 * 60 * 60));
     return {
       userId: uj.user_id,
-      hoursIdle
+      hoursIdle,
+      userName: uj.users?.display_name || 'Unknown',
+      whatsappNumber: uj.users?.whatsapp_number || 'Unknown',
+      journeyTitle: uj.journeys?.title || 'Unknown',
     };
   });
 }

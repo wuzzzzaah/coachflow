@@ -21,7 +21,7 @@ import {
 import { listJourneyVersions, getActiveUserCount } from './db/journeyVersions';
 import { listTemplates, cloneJourney } from './db/journeys';
 import { createStep, updateStep, deleteStep, reorderSteps } from './db/journeySteps';
-import { getUserByNumber, searchUsers, getUserProgress } from './db/users';
+import { getUserByNumber, searchUsers, getUserProgress, getUserById } from './db/users';
 import { getScoresForUser } from './db/scores';
 import { getUsersExportData, getUserExportData } from './db/export';
 import { getSessionMessages, getUserSessions, getSessionById } from './db/sessions';
@@ -747,6 +747,35 @@ app.get('/api/users/:id/export', requireRole('admin', 'super_admin'), async (req
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', `attachment; filename="user-${req.params.id}-export.csv"`);
     return res.send(csv);
+  } catch (err) {
+    return res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+
+app.post('/api/users/:id/nudge', requireRole('admin', 'super_admin'), async (req, res) => {
+  try {
+    const tenantId = (req.query.tenantId as string) ?? process.env.DEFAULT_TENANT_ID ?? '';
+    if (!tenantId) return res.status(400).json({ error: 'tenantId query param required' });
+
+    const user = await getUserById(req.params.id);
+    if (!user) return res.status(404).json({ error: 'user_not_found' });
+
+    const token = await getTenantWhatsAppToken(tenantId);
+    const tenant = await getTenantById(tenantId);
+    if (!token || !tenant?.phone_number_id) {
+      return res.status(400).json({ error: 'WhatsApp credentials not configured for this tenant' });
+    }
+
+    const creds = { accessToken: token, phoneNumberId: tenant.phone_number_id };
+    const journeyTitle = 'your journey'; // Could fetch actual title if needed
+    const message = `👋 Hey! Ready to continue ${journeyTitle}? Just reply here to pick up where you left off.`;
+
+    await sendTextMessage(user.whatsapp_number, message, creds);
+    await logReminder(tenantId, user.id);
+    await notifyIdleUser(tenantId, user.id, user.whatsapp_number);
+
+    return res.json({ status: 'ok' });
   } catch (err) {
     return res.status(500).json({ error: (err as Error).message });
   }

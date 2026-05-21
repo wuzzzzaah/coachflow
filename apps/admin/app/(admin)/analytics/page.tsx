@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useEffect, useState, useMemo } from 'react';
+import Link from 'next/link';
 import { apiFetch } from '../../../lib/api';
 import { JourneyRow, Cohort } from '@coachflow/shared';
-import { ChevronDown, BarChart3, Table as TableIcon, Send, Loader2, Users } from 'lucide-react';
+import { ChevronDown, BarChart3, Table as TableIcon, Send, Loader2, Users, Zap } from 'lucide-react';
 
 interface FunnelStep {
   step_index: number;
@@ -186,6 +187,15 @@ export default function AnalyticsPage() {
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Live Telemetry Link */}
+          <Link
+            href="/analytics/live"
+            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+          >
+            <Zap className="w-4 h-4 fill-white" />
+            Live View
+          </Link>
+
           {/* Send Reminders Button */}
           <button
             onClick={handleSendReminders}
