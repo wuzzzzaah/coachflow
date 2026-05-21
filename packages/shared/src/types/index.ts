@@ -109,7 +109,8 @@ export interface JourneyRow {
   title: string;
   description: string;
   estimated_minutes: number;
-  version: number;
+  version_number: number;
+  parent_journey_id: string | null;
   status: 'draft' | 'published';
   is_template: boolean;
   schedule_type: 'manual' | 'daily' | 'weekly';

@@ -43,6 +43,13 @@ vi.mock('../../db/journeyLoader', () => ({
   getStep: vi.fn(),
 }));
 
+vi.mock('../../db/journeyVersions', () => ({
+  getActiveVersionForUser: vi.fn().mockImplementation((_userId, journeyId) => Promise.resolve(journeyId)),
+  snapshotJourney: vi.fn(),
+  getActiveUserCount: vi.fn(),
+  listJourneyVersions: vi.fn(),
+}));
+
 vi.mock('../../db/tenants', () => ({
   getTenantPromptOverrides: vi.fn().mockResolvedValue({}),
 }));
@@ -69,6 +76,7 @@ import { InMemorySessionStore } from '../inMemorySessionStore';
 import { sendTextMessage, sendListMessage } from '../../whatsapp/sender';
 import { claimMessage, upsertUser } from '../../db/users';
 import { listJourneys, getJourney, getStep } from '../../db/journeyLoader';
+import { getActiveVersionForUser } from '../../db/journeyVersions';
 import { getLatestActiveSession, getSessionMessages } from '../../db/sessions';
 import { generate } from '../../ai/geminiClient';
 

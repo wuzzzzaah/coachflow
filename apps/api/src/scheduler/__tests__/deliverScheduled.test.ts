@@ -49,7 +49,7 @@ describe('deliverScheduledSteps', () => {
         title: 'Test Journey',
         description: '',
         estimated_minutes: 30,
-        version: 1,
+      version_number: 1,
         status: 'published',
         is_template: false,
         created_at: new Date().toISOString()

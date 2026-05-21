@@ -111,7 +111,7 @@ export async function cloneJourney(
       title: title || `${sourceJourney.title} (Copy)`,
       description: sourceJourney.description,
       estimated_minutes: sourceJourney.estimated_minutes,
-      version: 1,
+      version_number: 1,
       status: 'draft',
       is_template: false,
     })

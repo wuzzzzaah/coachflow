@@ -18,7 +18,8 @@ const sampleJourney: JourneyRow = {
   title: 'Source Journey',
   description: 'Source Description',
   estimated_minutes: 30,
-  version: 1,
+  version_number: 1,
+  parent_journey_id: null,
   status: 'published',
   is_template: true,
   schedule_type: 'manual',
@@ -68,7 +69,7 @@ describe('journeys db helpers', () => {
     it('returns templates for a tenant', async () => {
       const chain = makeChain([sampleJourney]);
       const db = { from: vi.fn(() => chain) };
-      vi.mocked(supabase).mockReturnValue(db as any);
+      vi.mocked(supabase).mockReturnValue(db as unknown as ReturnType<typeof supabase>);
 
       const result = await listTemplates(TENANT);
       expect(result).toHaveLength(1);
@@ -86,20 +87,27 @@ describe('journeys db helpers', () => {
 
       // Re-mocking more precisely
       const fromSpy = vi.fn((table: string) => {
-          if (table === 'journeys') {
-              // First call to journeys is fetch source
-              // Second call to journeys is insert new
-              return fromSpy.mock.calls.filter(c => c[0] === 'journeys').length === 1 ? journeyChain : insertJourneyChain;
-          }
-          if (table === 'journey_steps') {
-              // First call to journey_steps is fetch source steps
-              // Second call to journey_steps is insert new steps
-              return fromSpy.mock.calls.filter(c => c[0] === 'journey_steps').length === 1 ? stepsChain : insertStepsChain;
-          }
-          return {} as any;
+        if (table === 'journeys') {
+          // First call to journeys is fetch source
+          // Second call to journeys is insert new
+          return fromSpy.mock.calls.filter((c) => c[0] === 'journeys').length === 1
+            ? journeyChain
+            : insertJourneyChain;
+        }
+        if (table === 'journey_steps') {
+          // First call to journey_steps is fetch source steps
+          // Second call to journey_steps is insert new steps
+          return fromSpy.mock.calls.filter((c) => c[0] === 'journey_steps').length === 1
+            ? stepsChain
+            : insertStepsChain;
+        }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return {} as any;
       });
 
-      vi.mocked(supabase).mockReturnValue({ from: fromSpy } as any);
+      vi.mocked(supabase).mockReturnValue({ from: fromSpy } as unknown as ReturnType<
+        typeof supabase
+      >);
 
       const result = await cloneJourney(SOURCE_ID, TENANT, 'New Title');
 
@@ -108,25 +116,31 @@ describe('journeys db helpers', () => {
       expect(fromSpy).toHaveBeenCalledWith('journey_steps');
 
       // Verify insert journey call
-      expect(insertJourneyChain.insert).toHaveBeenCalledWith(expect.objectContaining({
+      expect(insertJourneyChain.insert).toHaveBeenCalledWith(
+        expect.objectContaining({
           tenant_id: TENANT,
           title: 'New Title',
           is_template: false,
-          status: 'draft'
-      }));
+          status: 'draft',
+        }),
+      );
 
       // Verify insert steps call
-      expect(insertStepsChain.insert).toHaveBeenCalledWith(expect.arrayContaining([
+      expect(insertStepsChain.insert).toHaveBeenCalledWith(
+        expect.arrayContaining([
           expect.objectContaining({
-              journey_id: expect.any(String),
-              title: 'Step 1'
-          })
-      ]));
+            journey_id: expect.any(String),
+            title: 'Step 1',
+          }),
+        ]),
+      );
     });
 
     it('throws if source journey not found', async () => {
       const journeyChain = makeChain(null, { message: 'Not found' });
-      vi.mocked(supabase).mockReturnValue({ from: vi.fn(() => journeyChain) } as any);
+      vi.mocked(supabase).mockReturnValue({
+        from: vi.fn(() => journeyChain),
+      } as unknown as ReturnType<typeof supabase>);
 
       await expect(cloneJourney(SOURCE_ID, TENANT)).rejects.toThrow('Source journey not found');
     });

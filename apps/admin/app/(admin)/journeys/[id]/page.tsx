@@ -25,6 +25,7 @@ interface Journey {
   title: string;
   description: string;
   estimated_minutes: number;
+  version_number: number;
   status: 'draft' | 'published';
   is_template: boolean;
   schedule_type: 'manual' | 'daily' | 'weekly';
@@ -33,12 +34,20 @@ interface Journey {
   steps: Step[];
 }
 
+interface JourneyVersion {
+  id: string;
+  version_number: number;
+  created_at: string;
+  active_users: number;
+}
+
 export default function JourneyDetailsPage() {
   const params = useParams();
   const id = params?.id as string;
   const tenantId = process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID || "default-tenant";
 
   const [journey, setJourney] = useState<Journey | null>(null);
+  const [versions, setVersions] = useState<JourneyVersion[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -71,6 +80,7 @@ export default function JourneyDetailsPage() {
   useEffect(() => {
     if (id) {
       loadJourney();
+      loadVersions();
     }
   }, [id]);
 
@@ -83,6 +93,15 @@ export default function JourneyDetailsPage() {
       setError((err as Error).message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadVersions = async () => {
+    try {
+      const res = await apiFetch(`/api/journeys/${id}/versions?tenantId=${tenantId}`);
+      setVersions(await res.json());
+    } catch (err) {
+      console.error("Failed to load versions:", err);
     }
   };
 
@@ -116,12 +135,28 @@ export default function JourneyDetailsPage() {
   const handleToggleStatus = async () => {
     if (!journey) return;
     const newStatus = journey.status === 'published' ? 'draft' : 'published';
+
+    if (newStatus === 'draft') {
+      try {
+        const res = await apiFetch(`/api/journeys/${id}/active-user-count?tenantId=${tenantId}`);
+        const { count } = await res.json();
+        if (count > 0) {
+          if (!confirm(`${count} users are currently mid-journey and will be pinned to a snapshot of the current version (v${journey.version_number}). Proceed?`)) {
+            return;
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch active user count:", err);
+      }
+    }
+
     try {
       await apiFetch(`/api/journeys/${id}?tenantId=${tenantId}`, {
         method: "PATCH", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),
       });
       loadJourney();
+      loadVersions();
     } catch (err: unknown) {
       alert((err as Error).message);
     }
@@ -272,6 +307,9 @@ export default function JourneyDetailsPage() {
             <div>
               <div className="flex items-center gap-3 mb-2">
                 <h1 className="text-3xl font-bold">{journey.title}</h1>
+                <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-bold uppercase">
+                  v{journey.version_number}
+                </span>
                 <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${
                   journey.status === 'published'
                     ? 'bg-green-100 text-green-800'
@@ -330,6 +368,37 @@ export default function JourneyDetailsPage() {
           </div>
         )}
       </div>
+
+      {/* Versions Section */}
+      {versions.length > 0 && (
+        <div className="bg-white p-6 rounded-lg shadow-sm border mb-8">
+          <h2 className="text-xl font-bold mb-4">Past Versions</h2>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="text-gray-500 text-sm border-b">
+                  <th className="pb-2 font-medium">Version</th>
+                  <th className="pb-2 font-medium">Date</th>
+                  <th className="pb-2 font-medium">Active Users</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {versions.map(v => (
+                  <tr key={v.id} className="text-sm">
+                    <td className="py-3 font-medium">v{v.version_number}</td>
+                    <td className="py-3 text-gray-600">{new Date(v.created_at).toLocaleDateString()}</td>
+                    <td className="py-3">
+                      <span className={`px-2 py-0.5 rounded-full text-xs ${v.active_users > 0 ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-600'}`}>
+                        {v.active_users} users
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Schedule Section */}
       <div className="bg-white p-6 rounded-lg shadow-sm border mb-8">

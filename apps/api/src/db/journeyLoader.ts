@@ -1,5 +1,6 @@
 import { supabase } from './supabaseClient';
 import { JourneyConfig, JourneyStep, JourneyRow, JourneyStepRow } from '@coachflow/shared';
+import { snapshotJourney, getActiveUserCount } from './journeyVersions';
 
 function rowToStep(row: JourneyStepRow): JourneyStep {
   return {
@@ -107,7 +108,7 @@ export async function createJourney(
     description: journeyData.description ?? '',
     estimated_minutes: journeyData.estimated_minutes ?? 30,
     status: journeyData.status ?? 'draft',
-    version: 1,
+    version_number: 1,
   });
   if (error) throw new Error(`Create journey failed: ${error.message}`);
 }
@@ -138,6 +139,31 @@ export async function updateJourney(
   if (journeyData.schedule_day !== undefined) updates.schedule_day = journeyData.schedule_day;
 
   if (Object.keys(updates).length === 0) return;
+
+  // If unpublishing (status published -> draft), check for active users to snapshot
+  if (journeyData.status === 'draft') {
+    const { data: existing } = await db
+      .from('journeys')
+      .select('status')
+      .eq('id', journeyId)
+      .eq('tenant_id', tenantId)
+      .single();
+
+    if (existing?.status === 'published') {
+      const activeCount = await getActiveUserCount(tenantId, journeyId);
+      if (activeCount > 0) {
+        const snapshotId = await snapshotJourney(tenantId, journeyId);
+        // Pin active users to this snapshot
+        await db
+          .from('user_journeys')
+          .update({ journey_version_id: snapshotId })
+          .eq('journey_id', journeyId)
+          .eq('tenant_id', tenantId)
+          .is('journey_version_id', null)
+          .is('completed_at', null);
+      }
+    }
+  }
 
   const { error } = await db
     .from('journeys')
