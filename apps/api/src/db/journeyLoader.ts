@@ -46,7 +46,7 @@ export async function listJourneys(tenantId: string, includeDrafts = false): Pro
     .is('deleted_at', null);
 
   if (!includeDrafts) {
-    query = query.eq('status', 'published');
+    query = query.eq('status', 'published').eq('is_template', false);
   }
 
   const { data: journeyRows, error: jErr } = await query;
