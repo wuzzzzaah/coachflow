@@ -75,6 +75,12 @@ export async function handleInbound(
 
   const { user, created } = await upsertUser(msg.whatsappNumber, msg.displayName);
   if (created) {
+    deliverEvent(tenantId, 'user_created', {
+      userId: user.id,
+      tenantId,
+      whatsappNumber: msg.whatsappNumber,
+      displayName: msg.displayName,
+    });
     deliverEvent(tenantId, 'first_message', {
       userId: user.id,
       tenantId,
@@ -419,6 +425,15 @@ async function runStepTurn(
       stepId: step.id,
       score: aiResponse.score,
     }).catch((err) => console.error(`[flowRouter] saveScore failed: ${(err as Error).message}`));
+
+    deliverEvent(tenantId, 'step_scored', {
+      userId: session.userId,
+      tenantId,
+      journeyId: session.currentJourneyId,
+      stepId: step.id,
+      score: aiResponse.score.overall,
+      dimensions: aiResponse.score.dimensions,
+    });
     await sendTextMessage(session.whatsappNumber, formatScoreCard(aiResponse.score), creds);
 
     const journey = await getJourney(tenantId, session.currentJourneyId);

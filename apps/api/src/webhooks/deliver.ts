@@ -1,4 +1,4 @@
-import crypto from 'crypto';
+import crypto from 'node:crypto';
 import { getEnabledWebhooksForEvent } from '../db/webhooks';
 
 export async function deliverEvent(
@@ -11,9 +11,10 @@ export async function deliverEvent(
     if (webhooks.length === 0) return;
 
     const body = JSON.stringify({
-      event,
-      payload,
-      timestamp: new Date().toISOString(),
+      id: crypto.randomUUID(),
+      created_at: new Date().toISOString(),
+      type: event,
+      data: payload,
     });
 
     for (const webhook of webhooks) {
