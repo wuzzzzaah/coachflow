@@ -10,7 +10,7 @@ export default async function LearnerLayout({ children }: { children: React.Reac
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect('/login');
+    redirect('/start');
   }
 
   return (

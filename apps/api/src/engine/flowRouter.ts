@@ -66,7 +66,7 @@ export async function handleInbound(
     return;
   }
 
-  const { user, created } = await upsertUser(msg.whatsappNumber, msg.displayName);
+  const { user, created } = await upsertUser(msg.whatsappNumber, msg.displayName, tenantId);
   if (created) {
     deliverEvent(tenantId, 'user_created', {
       userId: user.id,
@@ -113,10 +113,8 @@ export async function handleInbound(
     return;
   }
 
-  const inputText = (msg.text ?? '').trim();
-  if (!inputText) return;
-
-  // Handle journey selection from a WhatsApp list message.
+  // Handle journey selection from a list reply — must come before the
+  // empty-text guard because the picker sends replyId with no text body.
   if (msg.kind === 'list' && msg.replyId) {
     if (await getJourney(tenantId, msg.replyId)) {
       const resolvedId = await getActiveVersionForUser(user.id, msg.replyId, tenantId);
@@ -124,6 +122,9 @@ export async function handleInbound(
       return;
     }
   }
+
+  const inputText = (msg.text ?? '').trim();
+  if (!inputText) return;
 
   if (await handleKeyword(session, inputText, tenantId, adapter)) return;
 
@@ -293,7 +294,11 @@ async function beginStep(
 ): Promise<void> {
   const session = await getSession(whatsappNumber);
   if (!session || !session.currentJourneyId) return;
-  const resolvedJourneyId = await getActiveVersionForUser(session.userId, session.currentJourneyId, tenantId);
+  const resolvedJourneyId = await getActiveVersionForUser(
+    session.userId,
+    session.currentJourneyId,
+    tenantId,
+  );
   const step = await getStep(tenantId, resolvedJourneyId, session.currentStepIndex);
   if (!step) {
     await adapter.sendTextMessage(
@@ -323,9 +328,9 @@ async function beginStep(
 
   await adapter.sendTextMessage(whatsappNumber, step.openingMessage);
   if (step.mediaUrl && step.mediaType) {
-    adapter.sendMediaMessage(whatsappNumber, step.mediaType, step.mediaUrl, undefined).catch(
-      (err) => console.error(`[flowRouter] sendMediaMessage failed: ${err.message}`),
-    );
+    adapter
+      .sendMediaMessage(whatsappNumber, step.mediaType, step.mediaUrl, undefined)
+      .catch((err) => console.error(`[flowRouter] sendMediaMessage failed: ${err.message}`));
   }
   await appendTurn(whatsappNumber, { role: 'assistant', content: step.openingMessage });
   await logMessage({
@@ -354,7 +359,11 @@ async function runStepTurn(
     await sendWelcome(session, tenantId, adapter);
     return;
   }
-  const resolvedJourneyId = await getActiveVersionForUser(session.userId, session.currentJourneyId, tenantId);
+  const resolvedJourneyId = await getActiveVersionForUser(
+    session.userId,
+    session.currentJourneyId,
+    tenantId,
+  );
   const step = await getStep(tenantId, resolvedJourneyId, session.currentStepIndex);
   if (!step) return;
 
@@ -477,6 +486,7 @@ async function sendScorecard(
   const dimensionTotals: Record<string, { total: number; count: number }> = {};
 
   for (const s of scores) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const row = s as any;
     totalOverall += row.score;
     const criteria = row.criteria as { name: string; score: number }[];
@@ -497,6 +507,7 @@ async function sendScorecard(
     avg: (data.total / data.count).toFixed(0),
   }));
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const lastScore = scores[0] as any; // scores are ordered newest first
   const summary = lastScore.feedback?.split('\n\nDevelopment focus:')[0] ?? '';
 
@@ -517,7 +528,11 @@ async function advanceStep(
   adapter: IWhatsAppAdapter,
 ): Promise<void> {
   if (!session.currentJourneyId || !session.currentSessionId) return;
-  const resolvedJourneyId = await getActiveVersionForUser(session.userId, session.currentJourneyId, tenantId);
+  const resolvedJourneyId = await getActiveVersionForUser(
+    session.userId,
+    session.currentJourneyId,
+    tenantId,
+  );
   const journey = await getJourney(tenantId, resolvedJourneyId);
   if (!journey) return;
 
@@ -605,6 +620,7 @@ async function sendProgress(
 }
 
 /** Attempt to restore a session from the database for a returning user. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function attemptResume(user: any, tenantId: string): Promise<Session | undefined> {
   const latest = await getLatestActiveSession(user.id);
   if (!latest) return undefined;
@@ -615,16 +631,19 @@ async function attemptResume(user: any, tenantId: string): Promise<Session | und
     tenantId,
     userId: user.id,
     whatsappNumber: user.whatsapp_number,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     initialMode: latest.mode as any,
   }).then(async (s) => {
     return updateSession(s.whatsappNumber, {
       currentJourneyId: latest.journey_id,
       currentStepIndex: user.current_step_index,
       currentSessionId: latest.id,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       conversationHistory: history.map((m: any) => ({
         role: m.role,
         content: m.content,
       })),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       turnCount: history.filter((m: any) => m.role === 'user').length,
     });
   });

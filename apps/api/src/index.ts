@@ -109,6 +109,36 @@ configureSessionStore(store);
 
 const app = express();
 
+/**
+ * Flatten a stored WebAdapter message content object into a plain string
+ * so the React client can render it without dealing with WhatsApp message shapes.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function normalizeWebMessage(content: any): string {
+  if (typeof content === 'string') return content;
+  if (content?.type === 'text') return content.text?.body ?? '';
+  if (content?.type === 'interactive') {
+    const body = content.interactive?.body?.text ?? '';
+    const action = content.interactive?.action;
+    if (content.interactive?.type === 'button') {
+      const buttons = (action?.buttons ?? [])
+        .map((b: { reply?: { title?: string } }) => `• ${b.reply?.title ?? ''}`)
+        .join('\n');
+      return buttons ? `${body}\n\n${buttons}` : body;
+    }
+    if (content.interactive?.type === 'list') {
+      const items = (action?.sections ?? [])
+        .flatMap((s: { rows?: { title?: string }[] }) => s.rows ?? [])
+        .map((r: { title?: string }) => `• ${r.title ?? ''}`)
+        .join('\n');
+      return items ? `${body}\n\n${items}` : body;
+    }
+    return body;
+  }
+  // Fallback: JSON stringify so nothing renders as [object Object]
+  return JSON.stringify(content);
+}
+
 // Handle Slack URL encoded payloads (for interactivity)
 app.use(express.urlencoded({ extended: true }));
 
@@ -149,9 +179,12 @@ app.post('/channel/web/receive', requireLearner, async (req, res) => {
 
     const userId = req.learner!.id;
     const tenantId = req.learner!.tenantId;
+    // Use the same synthetic identifier stored in users.whatsapp_number by requireLearner
+    // so upsertUser finds the existing row rather than creating a duplicate.
+    const webUserId = `web:${req.learner!.authId}`;
 
     const adapter = new WebAdapter(tenantId, userId);
-    const msg = WebAdapter.parseInbound(req.body);
+    const msg = WebAdapter.parseInbound({ ...req.body, userId: webUserId });
 
     await handleInbound(msg, tenantId, adapter);
 
@@ -162,18 +195,35 @@ app.post('/channel/web/receive', requireLearner, async (req, res) => {
   }
 });
 
+// Learner "me" endpoint — returns the current user's DB record (journey state etc.)
+app.get('/api/users/me', requireLearner, async (req, res) => {
+  try {
+    const db = supabase();
+    const { data: user, error } = await db
+      .from('users')
+      .select('id, display_name, email, current_journey_id, current_step_index, onboarded_at')
+      .eq('id', req.learner!.id)
+      .single();
+    if (error) return res.status(500).json({ error: error.message });
+    return res.json(user);
+  } catch (err) {
+    return res.status(500).json({ error: (err as Error).message });
+  }
+});
+
 app.get('/channel/web/poll/:userId', requireLearner, async (req, res) => {
   try {
-    const userId = req.learner!.id;
+    const userId = req.learner!.id; // DB row UUID
+    const authId = req.learner!.authId; // Supabase Auth UUID (what the client sends)
     const tenantId = req.learner!.tenantId;
 
-    // Security: Ensure the polled userId matches the authenticated learnerId
-    if (req.params.userId !== userId) {
+    // The client sends its Supabase Auth ID in the URL; validate against that.
+    if (req.params.userId !== authId && req.params.userId !== userId) {
       return res.status(403).json({ error: 'forbidden' });
     }
 
     const messages = await pollAndClearWebMessages(tenantId, userId);
-    return res.json(messages.map((m) => m.content));
+    return res.json(messages.map((m) => normalizeWebMessage(m.content)));
   } catch (err) {
     return res.status(500).json({ error: (err as Error).message });
   }
@@ -190,6 +240,49 @@ app.get('/health', async (_req: Request, res: Response) => {
     activeSessions: await activeSessionCount(),
   });
 });
+
+// Dev-only: diagnose journey visibility (no auth required — remove before prod)
+if (process.env.NODE_ENV !== 'production') {
+  app.get('/debug/journeys', async (req, res) => {
+    const tenantId = (req.query.tenantId as string) || process.env.DEFAULT_TENANT_ID || '';
+    const db = supabase();
+
+    // Raw query — no filters
+    const { data: raw } = await db
+      .from('journeys')
+      .select('id, title, status, is_template, tenant_id, deleted_at')
+      .eq('tenant_id', tenantId);
+
+    // Exact listJourneys query
+    const { data: filtered, error: filteredErr } = await db
+      .from('journeys')
+      .select('*')
+      .eq('tenant_id', tenantId)
+      .is('deleted_at', null)
+      .eq('status', 'published')
+      .eq('is_template', false);
+
+    // Via listJourneys helper
+    let helperResult: unknown = null;
+    let helperError: string | null = null;
+    try {
+      helperResult = await listJourneys(tenantId);
+    } catch (e) {
+      helperError = (e as Error).message;
+    }
+
+    res.json({
+      tenantId,
+      raw: { count: raw?.length ?? 0, rows: raw },
+      filtered: { count: filtered?.length ?? 0, rows: filtered, error: filteredErr?.message },
+      helper: {
+        count: Array.isArray(helperResult) ? helperResult.length : -1,
+        error: helperError,
+        result: helperResult,
+      },
+    });
+  });
+}
 
 // Internal API — all routes below require a valid Supabase Auth JWT.
 app.use('/api', requireAuth);

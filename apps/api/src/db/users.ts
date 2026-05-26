@@ -4,10 +4,13 @@ import { UserRecord } from '@coachflow/shared';
 /**
  * Find a user by their WhatsApp number, or create one if not present.
  * Returns the user record and a boolean indicating whether it was just created.
+ * Pass tenantId so new users are linked to the correct tenant (required for
+ * admin user search and analytics which filter by tenant_id).
  */
 export async function upsertUser(
   whatsappNumber: string,
   displayName?: string,
+  tenantId?: string,
 ): Promise<{ user: UserRecord; created: boolean }> {
   const db = supabase();
   const existing = await db
@@ -25,7 +28,11 @@ export async function upsertUser(
 
   const insert = await db
     .from('users')
-    .insert({ whatsapp_number: whatsappNumber, display_name: displayName ?? null })
+    .insert({
+      whatsapp_number: whatsappNumber,
+      display_name: displayName ?? null,
+      ...(tenantId ? { tenant_id: tenantId } : {}),
+    })
     .select('*')
     .single();
   if (insert.error) {
@@ -90,11 +97,7 @@ export async function getUserByNumber(whatsappNumber: string): Promise<UserRecor
 
 export async function getUserById(userId: string): Promise<UserRecord | null> {
   const db = supabase();
-  const { data, error } = await db
-    .from('users')
-    .select('*')
-    .eq('id', userId)
-    .maybeSingle();
+  const { data, error } = await db.from('users').select('*').eq('id', userId).maybeSingle();
   if (error) throw new Error(`Get user failed: ${error.message}`);
   return (data as UserRecord) ?? null;
 }
@@ -114,7 +117,7 @@ export async function searchUsers(tenantId: string, query?: string) {
   const { data, error } = await qb;
   if (error) throw new Error(`Search users failed: ${error.message}`);
 
-  return data.map(u => ({
+  return data.map((u) => ({
     id: u.id,
     name: u.display_name,
     whatsapp_number: u.whatsapp_number,
@@ -141,7 +144,9 @@ export async function getUserProgress(tenantId: string, userId: string) {
   }
 
   // Get distinct journeys
-  const journeyIds = Array.from(new Set(sessions.map((s) => s.journey_id).filter(Boolean))) as string[];
+  const journeyIds = Array.from(
+    new Set(sessions.map((s) => s.journey_id).filter(Boolean)),
+  ) as string[];
 
   if (journeyIds.length === 0) {
     return [];
@@ -173,7 +178,7 @@ export async function getUserProgress(tenantId: string, userId: string) {
     const journeySessions = sessions.filter((s) => s.journey_id === j.id);
     const completedSessions = journeySessions.filter((s) => s.ended_at !== null);
     // Unique completed steps
-    const completedStepIds = new Set(completedSessions.map(s => s.step_id).filter(Boolean));
+    const completedStepIds = new Set(completedSessions.map((s) => s.step_id).filter(Boolean));
 
     // Sort descending by started_at or ended_at to find last active
     const sortedSessions = [...journeySessions].sort((a, b) => {
@@ -181,16 +186,17 @@ export async function getUserProgress(tenantId: string, userId: string) {
       const timeB = new Date(b.ended_at || b.started_at).getTime();
       return timeB - timeA;
     });
-    const lastActivity = sortedSessions.length > 0 ? (sortedSessions[0].ended_at || sortedSessions[0].started_at) : null;
+    const lastActivity =
+      sortedSessions.length > 0 ? sortedSessions[0].ended_at || sortedSessions[0].started_at : null;
 
-    const journeySteps = steps.filter(step => step.journey_id === j.id);
+    const journeySteps = steps.filter((step) => step.journey_id === j.id);
 
     return {
       journey_id: j.id,
       journey_title: j.title,
       completed_steps: completedStepIds.size,
       total_steps: journeySteps.length,
-      last_active_at: lastActivity
+      last_active_at: lastActivity,
     };
   });
 
